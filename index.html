@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SLXCA</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <h1>SLXCA</h1>
+        <p class="tag">
+          Connect Canadian academics and entrepreneurs to build strategic
+          industry projects.
+        </p>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="panel" id="submit-section">
+        <h2>Submit a Paper</h2>
+        <form id="paper-form">
+          <label
+            >Title<input
+              required
+              type="text"
+              id="paper-title"
+              placeholder="Paper title"
+          /></label>
+          <label
+            >Authors<input
+              type="text"
+              id="paper-authors"
+              placeholder="Authors, e.g. Jane Doe (UofT)"
+          /></label>
+          <label
+            >Institution<select id="paper-institution">
+              <option>University of Toronto</option>
+              <option>McMaster University</option>
+              <option>York University</option>
+              <option>McGill University</option>
+              <option>University of British Columbia</option>
+              <option>Other</option>
+            </select></label
+          >
+          <label
+            >Abstract<textarea
+              id="paper-abstract"
+              rows="4"
+              placeholder="Short abstract / summary"
+            ></textarea>
+          </label>
+          <label
+            >Strategic advantage (pick up to 3)
+            <div class="chips" id="advantage-chips">
+              <button type="button" class="chip">Nuclear</button>
+              <button type="button" class="chip">Cheap Energy</button>
+              <button type="button" class="chip">Resources</button>
+              <button type="button" class="chip">Land & Lumber</button>
+              <button type="button" class="chip">Data Centres</button>
+              <button type="button" class="chip">Methane</button>
+              <button type="button" class="chip">AI / Compute</button>
+            </div>
+          </label>
+          <div class="form-row">
+            <button id="submit-paper" type="submit" class="btn primary">
+              Submit Paper
+            </button>
+            <button id="reset-form" type="button" class="btn">Reset</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" id="browse-section">
+        <h2>Browse Projects</h2>
+        <div id="projects-list"></div>
+      </section>
+
+      <section class="panel" id="personality-section">
+        <h2>Role Profile</h2>
+        <p>
+          Complete the short profile to help matching (role preference &
+          skills).
+        </p>
+        <form id="profile-form">
+          <label
+            >Your name<input
+              required
+              type="text"
+              id="user-name"
+              placeholder="Full name"
+          /></label>
+          <label
+            >Email<input
+              type="email"
+              id="user-email"
+              placeholder="name@domain.ca"
+          /></label>
+          <label
+            >Role preference
+            <select id="role-pref">
+              <option>Entrepreneur / Founder</option>
+              <option>Engineer / Technical Lead</option>
+              <option>Product Manager</option>
+              <option>Researcher / Academic</option>
+              <option>Specialist / Advisor</option>
+            </select>
+          </label>
+          <label
+            >Primary skills (comma separated)
+            <input
+              id="user-skills"
+              placeholder="e.g. ML, distributed-systems, energy-systems"
+            />
+          </label>
+          <div class="form-row">
+            <button type="submit" class="btn primary">Save Profile</button>
+            <button id="clear-profile" type="button" class="btn">Clear</button>
+          </div>
+        </form>
+
+        <div id="matching-result" class="match-panel"></div>
+      </section>
+
+    <script src="app.js"></script>
+  </body>
+</html>
