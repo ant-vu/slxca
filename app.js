@@ -31,6 +31,52 @@ const SAMPLE_COURSES = [
   },
 ];
 
+// Mock roles and demo projects (for seeding)
+const DEMO_ROLES = [
+  "Entrepreneur / Founder",
+  "Engineer / Technical Lead",
+  "Product Manager",
+  "Researcher / Academic",
+  "Specialist / Advisor",
+  "Data Centre Ops",
+  "Nuclear Systems Engineer",
+];
+
+const DEMO_PROJECTS = [
+  {
+    title: "Cold-Climate Data Centre Placement using Cheap Hydro",
+    authors: "A. Singh (UofT)",
+    institution: "University of Toronto",
+    abstract:
+      "Optimizing placement of data centres in regions with abundant cheap hydro power to reduce cooling costs and carbon footprint.",
+    advantages: ["Cheap Energy", "Data Centres"],
+  },
+  {
+    title: "Methane Capture for Grid Stability",
+    authors: "L. Chen (McGill)",
+    institution: "McGill University",
+    abstract:
+      "Novel catalytic approach to capture and convert methane emissions into dispatchable energy.",
+    advantages: ["Methane", "Resources"],
+  },
+  {
+    title: "Nuclear Microreactors for Distributed Compute",
+    authors: "R. Patel (UofT)",
+    institution: "University of Toronto",
+    abstract:
+      "Design and safety models for small modular reactors powering edge data centres.",
+    advantages: ["Nuclear", "Cheap Energy", "AI / Compute"],
+  },
+  {
+    title: "Sustainable Lumber Supply Chains",
+    authors: "M. Osei (UBC)",
+    institution: "University of British Columbia",
+    abstract:
+      "Blockchain-backed traceability for lumber supply to support sustainable construction.",
+    advantages: ["Land & Lumber", "Resources"],
+  },
+];
+
 function read(key) {
   try {
     return JSON.parse(localStorage.getItem(key)) || null;
@@ -208,6 +254,30 @@ function renderProjectsFiltered(opts) {
   });
 }
 
+// Seed demo data (writes projects, courses, and roles if requested)
+function seedDemo(force) {
+  if (!force && (loadProjects().length || loadCourses().length)) {
+    if (!confirm("Local data exists. Overwrite with demo seed?")) return;
+  }
+  // seed projects
+  const seeded = DEMO_PROJECTS.map((p, i) => ({
+    ...p,
+    id: "p_demo_" + i,
+    joiners: [],
+  }));
+  write(LS_KEYS.PROJECTS, seeded);
+  // seed courses
+  write(LS_KEYS.COURSES, SAMPLE_COURSES);
+  // seed roles stored on window for populating selects
+  window._canapp_roles = DEMO_ROLES.slice();
+  // refresh UI
+  populateRoles();
+  renderProjects();
+  renderCourses();
+  renderProfile();
+  alert("Demo data seeded (localStorage).");
+}
+
 function showProjectDetails(p) {
   const modal = document.createElement("div");
   modal.style.position = "fixed";
@@ -282,7 +352,7 @@ function renderMatches() {
     el.style.marginBottom = "8px";
     el.innerHTML = `<strong>${escapeHtml(
       s.p.title
-    )}</strong> <div class="small">score ${s.score}</div>`;
+    )}</strong> <div class="small">Matching skills: ${s.score}</div>`;
     const btn = document.createElement("button");
     btn.className = "btn";
     btn.textContent = "View";
@@ -389,6 +459,9 @@ function init() {
     if (confirm("Clear saved profile?")) clearProfile();
   };
 
+  // populate role dropdown
+  populateRoles();
+
   // initial render
   renderProjects();
   renderProfile();
@@ -404,6 +477,28 @@ function enforceChipLimit(max) {
 }
 
 // expose for tests
-window._canapp = { loadProjects, loadProfile, loadCourses };
+function populateRoles() {
+  const sel = $("#role-pref");
+  if (!sel) return;
+  const roles =
+    window._canapp_roles && window._canapp_roles.length
+      ? window._canapp_roles
+      : DEMO_ROLES;
+  sel.innerHTML = "";
+  roles.forEach((r) => {
+    const opt = document.createElement("option");
+    opt.textContent = r;
+    opt.value = r;
+    sel.appendChild(opt);
+  });
+}
+
+window._canapp = {
+  loadProjects,
+  loadProfile,
+  loadCourses,
+  seedDemo,
+  renderProjectsFiltered,
+};
 
 init();

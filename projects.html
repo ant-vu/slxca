@@ -8,12 +8,18 @@
   </head>
   <body>
     <header class="site-header">
-      <div class="container">
-        <h1>Projects — Entrepreneur / Executor View</h1>
-        <p class="tag">
-          Browse submitted papers, filter by strategic advantages and reach out
-          to join.
-        </p>
+      <div class="container nav-row">
+        <div>
+          <h1>Projects</h1>
+          <p class="tag">
+            Browse submitted papers, filter by strategic advantages and reach
+            out to join.
+          </p>
+        </div>
+        <nav class="main-nav">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="projects.html" class="nav-link">Projects</a>
+        </nav>
       </div>
     </header>
 
@@ -50,13 +56,6 @@
       </section>
     </main>
 
-    <footer class="site-footer">
-      <div class="container">
-        <small
-          >Prototype — local demo. Open `index.html` to submit papers.</small
-        >
-      </div>
-    </footer>
     <script src="app.js"></script>
     <script>
       // wire up filters for this page
@@ -78,6 +77,15 @@
           apply();
         };
         apply();
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        const seed = document.getElementById("seed-demo");
+        if (seed) {
+          seed.onclick = () => {
+            if (window._canapp && window._canapp.seedDemo)
+              window._canapp.seedDemo();
+          };
+        }
       });
     </script>
   </body>

@@ -8,12 +8,16 @@
   </head>
   <body>
     <header class="site-header">
-      <div class="container">
-        <h1>SLXCA</h1>
-        <p class="tag">
-          Connect Canadian academics and entrepreneurs to build strategic
-          industry projects.
-        </p>
+      <div class="container nav-row">
+        <div>
+          <h1>SLXCA</h1>
+          <p class="tag">Connect Canadian academics and entrepreneurs to build strategic
+            industry projects.</p>
+        </div>
+        <nav class="main-nav">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="projects.html" class="nav-link">Projects</a>
+        </nav>
       </div>
     </header>
 
@@ -125,5 +129,11 @@
       </section>
 
     <script src="app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', ()=>{
+        const seed = document.getElementById('seed-demo');
+        if(seed){ seed.onclick = ()=>{ if(window._canapp && window._canapp.seedDemo) window._canapp.seedDemo(); } }
+      })
+    </script>
   </body>
 </html>
