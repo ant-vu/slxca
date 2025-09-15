@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SLXCA — Projects (Entrepreneur POV)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <h1>Projects — Entrepreneur / Executor View</h1>
+        <p class="tag">
+          Browse submitted papers, filter by strategic advantages and reach out
+          to join.
+        </p>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="panel">
+        <div class="toolbar">
+          <label
+            >Filter advantage
+            <select id="filter-adv">
+              <option value="">(all)</option>
+              <option>Nuclear</option>
+              <option>Cheap Energy</option>
+              <option>Resources</option>
+              <option>Land & Lumber</option>
+              <option>Data Centres</option>
+              <option>Methane</option>
+              <option>AI / Compute</option>
+            </select>
+          </label>
+          <label
+            >Search
+            <input
+              id="filter-search"
+              placeholder="search title / abstract / author"
+            />
+          </label>
+          <button id="clear-filters" class="btn">Clear</button>
+        </div>
+      </section>
+
+      <section class="panel" id="projects-panel">
+        <h2>Available Projects</h2>
+        <div id="projects-list"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <small
+          >Prototype — local demo. Open `index.html` to submit papers.</small
+        >
+      </div>
+    </footer>
+    <script src="app.js"></script>
+    <script>
+      // wire up filters for this page
+      document.addEventListener("DOMContentLoaded", () => {
+        const adv = document.getElementById("filter-adv");
+        const search = document.getElementById("filter-search");
+        const clear = document.getElementById("clear-filters");
+        function apply() {
+          window._canapp.renderProjectsFiltered({
+            advantage: adv.value,
+            text: search.value,
+          });
+        }
+        adv.onchange = apply;
+        search.oninput = apply;
+        clear.onclick = () => {
+          adv.value = "";
+          search.value = "";
+          apply();
+        };
+        apply();
+      });
+    </script>
+  </body>
+</html>

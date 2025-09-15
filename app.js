@@ -114,25 +114,63 @@ function enrollCourse(id) {
 
 // Renderers
 function renderProjects() {
+  // Delegate to filtered renderer with empty filter (renders all)
+  renderProjectsFiltered({});
+}
+
+function renderProjectsFiltered(opts) {
+  opts = opts || {};
   const list = $("#projects-list");
+  if (!list) return;
   list.innerHTML = "";
   const projects = loadProjects();
-  if (!projects.length)
+  const filtered = projects.filter((p) => {
+    if (opts.advantage && opts.advantage.trim()) {
+      const adv = opts.advantage.trim().toLowerCase();
+      if (!(p.advantages || []).map((a) => a.toLowerCase()).includes(adv))
+        return false;
+    }
+    if (opts.text && opts.text.trim()) {
+      const t = opts.text.trim().toLowerCase();
+      if (
+        !(
+          (p.title || "").toLowerCase().includes(t) ||
+          (p.abstract || "").toLowerCase().includes(t) ||
+          (p.authors || "").toLowerCase().includes(t)
+        )
+      )
+        return false;
+    }
+    return true;
+  });
+  if (!filtered.length) {
     list.innerHTML =
       '<div class="small">No papers yet — submit the first one.</div>';
-  projects.forEach((p) => {
+    return;
+  }
+  filtered.forEach((p) => {
     const el = document.createElement("div");
-    el.className = "project";
-    el.innerHTML = `<h3>${escapeHtml(p.title)}</h3>
-      <div class="meta">${escapeHtml(p.authors || "")} — ${escapeHtml(
+    el.className = "project-card";
+    const left = document.createElement("div");
+    left.className = "left";
+    left.innerHTML = `<h3>${escapeHtml(
+      p.title
+    )}</h3><div class="meta">${escapeHtml(p.authors || "")} — ${escapeHtml(
       p.institution || ""
-    )}</div>
-      <div class="small">${escapeHtml(p.abstract || "")}</div>
-      <div style="margin-top:8px;color:var(--muted)">Strategic: ${(
-        p.advantages || []
-      ).join(", ")}</div>
-      <div style="margin-top:8px"></div>`;
+    )}</div><div class="small">${escapeHtml(p.abstract || "")}</div>`;
+    const tags = document.createElement("div");
+    tags.className = "tags";
+    (p.advantages || []).forEach((a) => {
+      const t = document.createElement("div");
+      t.className = "tag-chip";
+      t.textContent = a;
+      tags.appendChild(t);
+    });
+    left.appendChild(tags);
     const actions = document.createElement("div");
+    actions.style.display = "flex";
+    actions.style.flexDirection = "column";
+    actions.style.gap = "8px";
     const joinBtn = document.createElement("button");
     joinBtn.className = "btn";
     joinBtn.textContent = "Join / Offer help";
@@ -153,6 +191,7 @@ function renderProjects() {
     };
     actions.appendChild(joinBtn);
     actions.appendChild(viewBtn);
+    el.appendChild(left);
     el.appendChild(actions);
 
     const joiners = document.createElement("div");
