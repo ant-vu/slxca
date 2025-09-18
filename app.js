@@ -164,6 +164,113 @@ function renderProjects() {
   renderProjectsFiltered({});
 }
 
+// Personality test questions (map to trait axes)
+const QUESTIONS = [
+  {
+    id: "q1",
+    text: "I prefer to lead new initiatives and take charge of projects.",
+    trait: "drive",
+  },
+  {
+    id: "q2",
+    text: "I enjoy working closely with diverse teams and collaborators.",
+    trait: "collaboration",
+  },
+  {
+    id: "q3",
+    text: "I am comfortable with technical complexity and low-level systems work.",
+    trait: "technical",
+  },
+  {
+    id: "q4",
+    text: "I prefer stable, low-risk approaches over experimental ones.",
+    trait: "risk_aversion",
+  },
+  {
+    id: "q5",
+    text: "I like to move quickly and iterate rather than plan every detail.",
+    trait: "speed",
+  },
+  {
+    id: "q6",
+    text: "I pay attention to regulatory, safety, and compliance details.",
+    trait: "compliance",
+  },
+  {
+    id: "q7",
+    text: "I enjoy designing systems for scale (e.g., data centres, infrastructure).",
+    trait: "scale",
+  },
+  {
+    id: "q8",
+    text: "I prefer working on long-term research rather than immediate product delivery.",
+    trait: "long_term",
+  },
+];
+
+function renderPersonalityQuestions() {
+  const container = $("#questions");
+  if (!container) return;
+  container.innerHTML = "";
+  const pf = loadProfile();
+  QUESTIONS.forEach((q) => {
+    const div = document.createElement("div");
+    div.className = "question";
+    const t = document.createElement("div");
+    t.className = "qtext";
+    t.textContent = q.text;
+    div.appendChild(t);
+    const likert = document.createElement("div");
+    likert.className = "likert";
+    for (let i = 1; i <= 5; i++) {
+      const id = q.id + "_" + i;
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = q.id;
+      input.value = i;
+      input.id = id;
+      const span = document.createElement("span");
+      span.textContent = i;
+      label.appendChild(input);
+      label.appendChild(span);
+      likert.appendChild(label);
+    }
+    div.appendChild(likert);
+    container.appendChild(div);
+  });
+  // pre-fill if profile has traits
+  if (pf && pf.traits) {
+    QUESTIONS.forEach((q) => {
+      const val = pf.traits[q.trait];
+      if (val) {
+        const el = document.querySelector(
+          'input[name="' + q.id + '"][value="' + val + '"]'
+        );
+        if (el) el.checked = true;
+      }
+    });
+  }
+}
+
+function collectPersonalityAnswers() {
+  const answers = {};
+  let found = false;
+  QUESTIONS.forEach((q) => {
+    const el = document.querySelector('input[name="' + q.id + '"]:checked');
+    if (el) {
+      answers[q.trait] = (answers[q.trait] || 0) + parseInt(el.value, 10);
+      found = true;
+    } else {
+      answers[q.trait] = (answers[q.trait] || 0) + 0;
+    }
+  });
+  if (!found) return null; // no answers
+  // average per trait (some traits may have multiple questions later)
+  // For now each trait appears once, so normalize to 1-5
+  return answers;
+}
+
 function renderProjectsFiltered(opts) {
   opts = opts || {};
   const list = $("#projects-list");
@@ -382,6 +489,41 @@ function scoreMatch(p, pf) {
     p.institution.toLowerCase().includes((pf.affiliation || "").toLowerCase())
   )
     score += 1;
+  // Trait-based matching: infer project trait vector from advantages
+  const ADV_TO_TRAITS = {
+    "Cheap Energy": { drive: 3, technical: 2, scale: 2 },
+    "Data Centres": { technical: 3, scale: 3, compliance: 2 },
+    Methane: { technical: 2, compliance: 2, drive: 2 },
+    Nuclear: { technical: 4, compliance: 4, risk_aversion: 3 },
+    "Land & Lumber": { long_term: 3, collaboration: 2 },
+    Resources: { long_term: 2, scale: 2 },
+    "AI / Compute": { technical: 4, speed: 3 },
+  };
+  if (pf.traits) {
+    // build project trait vector
+    const projTraits = {};
+    (p.advantages || []).forEach((a) => {
+      const map = ADV_TO_TRAITS[a];
+      if (!map) return;
+      Object.keys(map).forEach((k) => {
+        projTraits[k] = (projTraits[k] || 0) + map[k];
+      });
+    });
+    // normalize and compute simple similarity (inverse Euclidean distance)
+    if (Object.keys(projTraits).length) {
+      const dims = Object.keys(pf.traits);
+      let sumSq = 0;
+      dims.forEach((d) => {
+        const pt = projTraits[d] || 0;
+        const vt = pf.traits[d] || 3; // default neutral
+        const diff = vt - pt;
+        sumSq += diff * diff;
+      });
+      const dist = Math.sqrt(sumSq);
+      const traitScore = Math.max(0, 10 - dist); // convert to bonus
+      score += Math.round(traitScore);
+    }
+  }
   return score;
 }
 
@@ -457,6 +599,37 @@ function init() {
   };
   $("#clear-profile").onclick = () => {
     if (confirm("Clear saved profile?")) clearProfile();
+  };
+
+  // personality form handling
+  renderPersonalityQuestions();
+  $("#personality-form").onsubmit = (e) => {
+    e.preventDefault();
+    const ans = collectPersonalityAnswers();
+    if (!ans) {
+      alert("Please answer at least one question.");
+      return;
+    }
+    const pf = loadProfile() || {
+      name: "",
+      email: "",
+      role: "Entrepreneur / Founder",
+      skills: [],
+    };
+    pf.traits = ans; // store raw trait scores
+    saveProfile(pf);
+    alert("Personality saved to your profile.");
+  };
+  $("#clear-personality").onclick = () => {
+    if (confirm("Clear saved personality?")) {
+      const pf = loadProfile();
+      if (pf && pf.traits) {
+        delete pf.traits;
+        saveProfile(pf);
+        alert("Personality cleared.");
+        renderPersonalityQuestions();
+      }
+    }
   };
 
   // populate role dropdown
