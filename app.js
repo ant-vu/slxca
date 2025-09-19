@@ -458,6 +458,9 @@ function renderProfile() {
     $("#profile-form").reset();
     $("#matching-result").innerHTML =
       '<div class="small">No profile saved.</div>';
+    // clear trait summary
+    const ts = $("#trait-summary");
+    if (ts) ts.innerHTML = '<div class="small">No personality data.</div>';
     return;
   }
   $("#user-name").value = pf.name || "";
@@ -465,6 +468,62 @@ function renderProfile() {
   $("#role-pref").value = pf.role || "Entrepreneur / Founder";
   $("#user-skills").value = (pf.skills || []).join(", ");
   renderMatches();
+  renderTraitSummary(pf);
+}
+
+function renderTraitSummary(pf) {
+  const container = $("#trait-summary");
+  if (!container) return;
+  const normalized =
+    pf.traitNormalized ||
+    (() => {
+      // fallback: convert pf.traits (1..5) to 0..1
+      if (!pf.traits) return null;
+      const out = {};
+      Object.keys(pf.traits).forEach((k) => {
+        const v = pf.traits[k];
+        out[k] = (v - 1) / 4;
+      });
+      return out;
+    })();
+  if (!normalized) {
+    container.innerHTML = '<div class="small">No personality data.</div>';
+    return;
+  }
+  // order traits for display
+  const order = [
+    "drive",
+    "collaboration",
+    "technical",
+    "risk_aversion",
+    "speed",
+    "compliance",
+    "scale",
+    "long_term",
+  ];
+  container.innerHTML = "";
+  order.forEach((t) => {
+    const val = typeof normalized[t] === "number" ? normalized[t] : 0.5;
+    const pct = Math.round(val * 100);
+    const row = document.createElement("div");
+    row.className = "trait-row";
+    const label = document.createElement("div");
+    label.className = "trait-label";
+    label.textContent = t.replaceAll("_", " ");
+    const bar = document.createElement("div");
+    bar.className = "trait-bar";
+    const fill = document.createElement("div");
+    fill.className = "trait-fill";
+    fill.style.width = pct + "%";
+    const value = document.createElement("div");
+    value.className = "trait-value";
+    value.textContent = pct + "%";
+    bar.appendChild(fill);
+    row.appendChild(label);
+    row.appendChild(bar);
+    row.appendChild(value);
+    container.appendChild(row);
+  });
 }
 
 // Simple matching: score projects by #matching keywords between project advantages+title+abstract and user skills/role
