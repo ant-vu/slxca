@@ -165,6 +165,7 @@ function renderProjects() {
 }
 
 // Personality test questions (map to trait axes)
+// Expanded to 12 questions for improved reliability (some traits repeated)
 const QUESTIONS = [
   {
     id: "q1",
@@ -206,6 +207,26 @@ const QUESTIONS = [
     text: "I prefer working on long-term research rather than immediate product delivery.",
     trait: "long_term",
   },
+  {
+    id: "q9",
+    text: "I often take initiative to push projects past obstacles.",
+    trait: "drive",
+  },
+  {
+    id: "q10",
+    text: "I actively seek input from others and value diverse perspectives.",
+    trait: "collaboration",
+  },
+  {
+    id: "q11",
+    text: "I enjoy debugging and solving low-level technical problems.",
+    trait: "technical",
+  },
+  {
+    id: "q12",
+    text: "I prefer rapid prototyping and testing ideas quickly.",
+    trait: "speed",
+  },
 ];
 
 function renderPersonalityQuestions() {
@@ -239,10 +260,10 @@ function renderPersonalityQuestions() {
     div.appendChild(likert);
     container.appendChild(div);
   });
-  // pre-fill if profile has traits
-  if (pf && pf.traits) {
+  // pre-fill if profile has per-question answers saved
+  if (pf && pf.personalityAnswers) {
     QUESTIONS.forEach((q) => {
-      const val = pf.traits[q.trait];
+      const val = pf.personalityAnswers[q.id];
       if (val) {
         const el = document.querySelector(
           'input[name="' + q.id + '"][value="' + val + '"]'
@@ -254,21 +275,32 @@ function renderPersonalityQuestions() {
 }
 
 function collectPersonalityAnswers() {
-  const answers = {};
-  let found = false;
+  // collect per-question answers and aggregate per-trait
+  const answersByQ = {};
+  const sums = {};
+  const counts = {};
+  let any = false;
   QUESTIONS.forEach((q) => {
     const el = document.querySelector('input[name="' + q.id + '"]:checked');
     if (el) {
-      answers[q.trait] = (answers[q.trait] || 0) + parseInt(el.value, 10);
-      found = true;
-    } else {
-      answers[q.trait] = (answers[q.trait] || 0) + 0;
+      const v = parseInt(el.value, 10);
+      answersByQ[q.id] = v;
+      sums[q.trait] = (sums[q.trait] || 0) + v;
+      counts[q.trait] = (counts[q.trait] || 0) + 1;
+      any = true;
     }
   });
-  if (!found) return null; // no answers
-  // average per trait (some traits may have multiple questions later)
-  // For now each trait appears once, so normalize to 1-5
-  return answers;
+  if (!any) return null;
+  // compute per-trait averages (1-5) then normalize to 0-1
+  const traitAverages = {};
+  const traitNormalized = {};
+  Object.keys(sums).forEach((t) => {
+    const avg = sums[t] / counts[t];
+    traitAverages[t] = avg;
+    // normalize 1..5 -> 0..1
+    traitNormalized[t] = (avg - 1) / 4;
+  });
+  return { answersByQ, traitAverages, traitNormalized };
 }
 
 function renderProjectsFiltered(opts) {
@@ -511,17 +543,27 @@ function scoreMatch(p, pf) {
     });
     // normalize and compute simple similarity (inverse Euclidean distance)
     if (Object.keys(projTraits).length) {
-      const dims = Object.keys(pf.traits);
+      // project trait weights are heuristic integers; convert both sides to normalized 0..1
+      const userNorm = pf.traitNormalized || pf.traits || {};
+      // first, determine max value in projTraits for normalization
+      const maxVal = Math.max(...Object.values(projTraits));
+      const dims = Array.from(
+        new Set([...Object.keys(userNorm), ...Object.keys(projTraits)])
+      );
       let sumSq = 0;
       dims.forEach((d) => {
-        const pt = projTraits[d] || 0;
-        const vt = pf.traits[d] || 3; // default neutral
+        const ptRaw = projTraits[d] || 0;
+        const pt = maxVal > 0 ? ptRaw / maxVal : 0; // normalize proj trait to 0..1
+        const vt = typeof userNorm[d] === "number" ? userNorm[d] : 0.5; // default neutral 0.5
         const diff = vt - pt;
         sumSq += diff * diff;
       });
       const dist = Math.sqrt(sumSq);
-      const traitScore = Math.max(0, 10 - dist); // convert to bonus
-      score += Math.round(traitScore);
+      // convert distance to a small bonus (higher when closer). scale: max possible dist sqrt(n)
+      const maxDist = Math.sqrt(dims.length);
+      const closeness = 1 - Math.min(dist / maxDist, 1); // 0..1
+      const traitScore = Math.round(closeness * 6); // up to +6 bonus
+      score += traitScore;
     }
   }
   return score;
@@ -616,15 +658,21 @@ function init() {
       role: "Entrepreneur / Founder",
       skills: [],
     };
-    pf.traits = ans; // store raw trait scores
+    // store detailed personality data:
+    // per-question answers, per-trait averages (1-5), and normalized (0-1)
+    pf.personalityAnswers = ans.answersByQ;
+    pf.traits = ans.traitAverages;
+    pf.traitNormalized = ans.traitNormalized;
     saveProfile(pf);
     alert("Personality saved to your profile.");
   };
   $("#clear-personality").onclick = () => {
     if (confirm("Clear saved personality?")) {
       const pf = loadProfile();
-      if (pf && pf.traits) {
+      if (pf && (pf.traits || pf.personalityAnswers || pf.traitNormalized)) {
         delete pf.traits;
+        delete pf.personalityAnswers;
+        delete pf.traitNormalized;
         saveProfile(pf);
         alert("Personality cleared.");
         renderPersonalityQuestions();
