@@ -469,6 +469,104 @@ function renderProfile() {
   $("#user-skills").value = (pf.skills || []).join(", ");
   renderMatches();
   renderTraitSummary(pf);
+  renderTraitRadar(pf);
+}
+
+function renderTraitRadar(pf) {
+  const container = $("#trait-radar");
+  if (!container) return;
+  const normalized =
+    pf.traitNormalized ||
+    (pf.traits
+      ? Object.fromEntries(
+          Object.keys(pf.traits).map((k) => [k, (pf.traits[k] - 1) / 4])
+        )
+      : null);
+  if (!normalized) {
+    container.innerHTML = '<div class="small">No personality data.</div>';
+    return;
+  }
+  // radar parameters
+  const order = [
+    "drive",
+    "collaboration",
+    "technical",
+    "risk_aversion",
+    "speed",
+    "compliance",
+    "scale",
+    "long_term",
+  ];
+  const size = 160;
+  const cx = size / 2,
+    cy = size / 2,
+    r = size / 2 - 12;
+  const angleStep = (Math.PI * 2) / order.length;
+  // build points for the user's polygon
+  const points = order
+    .map((t, i) => {
+      const v = typeof normalized[t] === "number" ? normalized[t] : 0.5;
+      const rad = v * r;
+      const ang = -Math.PI / 2 + i * angleStep; // start at top
+      const x = cx + Math.cos(ang) * rad;
+      const y = cy + Math.sin(ang) * rad;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  // grid (3 rings)
+  const rings = [0.33, 0.66, 1]
+    .map((f) => {
+      const pts = order
+        .map((t, i) => {
+          const ang = -Math.PI / 2 + i * angleStep;
+          const x = cx + Math.cos(ang) * r * f;
+          const y = cy + Math.sin(ang) * r * f;
+          return `${x},${y}`;
+        })
+        .join(" ");
+      return `<polygon points="${pts}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+    })
+    .join("\n");
+  // axis labels positions
+  const labels = order
+    .map((t, i) => {
+      const ang = -Math.PI / 2 + i * angleStep;
+      const x = cx + Math.cos(ang) * (r + 12);
+      const y = cy + Math.sin(ang) * (r + 12) + 4;
+      return `<text x="${x.toFixed(1)}" y="${y.toFixed(
+        1
+      )}" font-size="11" fill="var(--muted)" text-anchor="middle">${t.replaceAll(
+        "_",
+        " "
+      )}</text>`;
+    })
+    .join("\n");
+  const svg = `
+    <svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g1" x1="0%" x2="100%">
+          <stop offset="0%" stop-color="#37b6a7" stop-opacity="0.9" />
+          <stop offset="100%" stop-color="#4caf50" stop-opacity="0.9" />
+        </linearGradient>
+      </defs>
+      ${rings}
+      ${order
+        .map((t, i) => {
+          const ang = -Math.PI / 2 + i * angleStep;
+          const x = cx + Math.cos(ang) * r;
+          const y = cy + Math.sin(ang) * r;
+          return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(
+            1
+          )}" y2="${y.toFixed(
+            1
+          )}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+        })
+        .join("\n")}
+      <polygon points="${points}" fill="url(#g1)" fill-opacity="0.6" stroke="#37b6a7" stroke-width="1.5" />
+      ${labels}
+    </svg>
+  `;
+  container.innerHTML = svg;
 }
 
 function renderTraitSummary(pf) {
