@@ -206,6 +206,44 @@ select {
   height: 100%;
   display: block;
 }
+
+/* Tooltip for info icons */
+.info {
+  display: inline-block;
+  margin-left: 6px;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: default;
+  position: relative;
+}
+.info:focus {
+  outline: 2px solid rgba(55, 182, 167, 0.25);
+}
+.tooltip {
+  position: absolute;
+  left: 110%;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 220px;
+  background: rgba(2, 6, 15, 0.95);
+  color: #cfeee9;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  display: none;
+  z-index: 40;
+}
+.info:hover .tooltip,
+.info:focus .tooltip {
+  display: block;
+}
 /* Personality test */
 .question {
   padding: 10px 0;

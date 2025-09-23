@@ -120,13 +120,17 @@
             />
           </label>
             <div class="field">
-              <label>Trait summary (normalized)</label>
+              <label>Trait summary (normalized) <span class="info" tabindex="0">i
+                  <span class="tooltip">Values normalized from 1..5 → 0..100%. 1→0% (low), 3→50%, 5→100% (high). Bars and radar use the same data; answer more questions for better reliability.</span>
+                </span></label>
               <div id="trait-summary" class="trait-summary">
                 <!-- bars will render here -->
               </div>
             </div>
             <div class="field">
-              <label>Radar view</label>
+              <label>Radar view <span class="info" tabindex="0">i
+                  <span class="tooltip">Circular view of your normalized traits (0–100%). Useful for quick visual comparison to project needs.</span>
+                </span></label>
               <div style="display:flex;gap:12px;align-items:center;">
                 <div id="trait-radar" style="width:160px;height:160px"></div>
                 <div class="small" style="max-width:220px">Circular radar visualization of your normalized traits (0–100%). Useful for quick visual comparison to project needs.</div>
