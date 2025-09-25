@@ -131,7 +131,7 @@
                 <div id="trait-radar" style="width:160px;height:160px"></div>
                 <div class="small" style="max-width:220px">Circular radar visualization of your normalized traits (0–100%). Useful for quick visual comparison to project needs.</div>
               </div>
-              <div class="trait-legend">Normalization: answers 1–5 are scaled to 0–100% (1 → 0%, 3 → 50%, 5 → 100%). Bars and radar use the same normalized values. Answer more questions for better reliability.</div>
+              <div class="trait-legend">Normalization: answers 1–5 are scaled to 0–100% (1 → 0%, 3 → 50%, 5 → 100%). Bars and radar use the same normalized values. Answering more questions improves reliability. <a id="legend-open" href="#" class="muted-link">How it works</a></div>
             </div>
           <div class="form-row">
             <button type="submit" class="btn primary">Save Profile</button>
@@ -155,6 +155,16 @@
       </section>
 
     <script src="app.js"></script>
+    <div id="how-modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-card">
+        <h3>How trait normalization works</h3>
+        <p class="small">Each question is answered on a 1–5 scale. For each trait we average the answers of the questions that map to that trait. A trait average of 1 maps to 0% (low), 3 maps to 50%, and 5 maps to 100% (high). The bars and radar both use the same normalized values for consistency.</p>
+        <p class="small">This is a lightweight, client-side heuristic to help match people and projects. For better accuracy answer all questions and consider adding more items or reverse-scored questions in future iterations.</p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button id="how-close" class="btn">Close</button>
+        </div>
+      </div>
+    </div>
     <script>
       document.addEventListener('DOMContentLoaded', ()=>{
         const seed = document.getElementById('seed-demo');

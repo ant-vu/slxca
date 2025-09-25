@@ -844,6 +844,25 @@ function init() {
   renderProjects();
   renderProfile();
   renderCourses();
+
+  // How-it-works modal handlers
+  const legendOpen = document.getElementById("legend-open");
+  const howModal = document.getElementById("how-modal");
+  const howClose = document.getElementById("how-close");
+  if (legendOpen && howModal && howClose) {
+    legendOpen.onclick = (ev) => {
+      ev.preventDefault();
+      howModal.setAttribute("aria-hidden", "false");
+      howClose.focus();
+    };
+    howClose.onclick = () => {
+      howModal.setAttribute("aria-hidden", "true");
+    };
+    // close on Esc
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") howModal.setAttribute("aria-hidden", "true");
+    });
+  }
 }
 
 function enforceChipLimit(max) {
