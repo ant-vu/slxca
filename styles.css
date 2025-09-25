@@ -244,6 +244,12 @@ select {
 .info:focus .tooltip {
   display: block;
 }
+/* Legend under radar/bars */
+.trait-legend {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
 /* Personality test */
 .question {
   padding: 10px 0;
