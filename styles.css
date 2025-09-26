@@ -291,6 +291,13 @@ select {
   font-size: 12px;
   margin-left: 6px;
 }
+
+/* when modal open, subtly blur and scale the page content for focus */
+.modal-open .container {
+  transform: scale(0.995);
+  filter: blur(3px) saturate(0.96);
+  transition: transform 220ms ease, filter 220ms ease;
+}
 /* Personality test */
 .question {
   padding: 10px 0;

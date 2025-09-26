@@ -853,14 +853,19 @@ function init() {
     legendOpen.onclick = (ev) => {
       ev.preventDefault();
       howModal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
       howClose.focus();
     };
     howClose.onclick = () => {
       howModal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
     };
     // close on Esc
     document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape") howModal.setAttribute("aria-hidden", "true");
+      if (ev.key === "Escape") {
+        howModal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+      }
     });
   }
 }
