@@ -296,7 +296,8 @@ select {
 .modal-open .container {
   transform: scale(0.995);
   filter: blur(3px) saturate(0.96);
-  transition: transform 220ms ease, filter 220ms ease;
+  opacity: 0.94;
+  transition: transform 220ms ease, filter 220ms ease, opacity 220ms ease;
 }
 /* Personality test */
 .question {
