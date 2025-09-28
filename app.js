@@ -850,22 +850,81 @@ function init() {
   const howModal = document.getElementById("how-modal");
   const howClose = document.getElementById("how-close");
   if (legendOpen && howModal && howClose) {
-    legendOpen.onclick = (ev) => {
-      ev.preventDefault();
+    // small focus-trap utility scoped to this modal
+    let lastFocusedBeforeModal = null;
+    let modalKeyHandler = null;
+
+    const getFocusable = (root) => {
+      const sel =
+        'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      return Array.from(root.querySelectorAll(sel)).filter((el) => {
+        // filter out invisible elements
+        return el.offsetWidth || el.offsetHeight || el.getClientRects().length;
+      });
+    };
+
+    const openModal = () => {
+      lastFocusedBeforeModal = document.activeElement;
       howModal.setAttribute("aria-hidden", "false");
       document.body.classList.add("modal-open");
-      howClose.focus();
+
+      const focusable = getFocusable(howModal);
+      const first = focusable[0] || howClose;
+      const last = focusable[focusable.length - 1] || howClose;
+      // focus the first sensible control inside the modal
+      first.focus();
+
+      modalKeyHandler = function (ev) {
+        if (ev.key === "Tab") {
+          // trap Tab / Shift+Tab
+          const cur = document.activeElement;
+          if (focusable.length === 0) {
+            ev.preventDefault();
+            return;
+          }
+          if (ev.shiftKey) {
+            if (cur === first || cur === howModal) {
+              ev.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (cur === last) {
+              ev.preventDefault();
+              first.focus();
+            }
+          }
+        } else if (ev.key === "Escape") {
+          // allow Esc to close
+          closeModal();
+        }
+      };
+      document.addEventListener("keydown", modalKeyHandler);
     };
-    howClose.onclick = () => {
+
+    const closeModal = () => {
       howModal.setAttribute("aria-hidden", "true");
       document.body.classList.remove("modal-open");
-    };
-    // close on Esc
-    document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape") {
-        howModal.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("modal-open");
+      if (modalKeyHandler) {
+        document.removeEventListener("keydown", modalKeyHandler);
+        modalKeyHandler = null;
       }
+      if (
+        lastFocusedBeforeModal &&
+        typeof lastFocusedBeforeModal.focus === "function"
+      ) {
+        lastFocusedBeforeModal.focus();
+      }
+      lastFocusedBeforeModal = null;
+    };
+
+    legendOpen.onclick = (ev) => {
+      ev.preventDefault();
+      openModal();
+    };
+    howClose.onclick = closeModal;
+    // also close if backdrop clicked (user clicked outside modal-card)
+    howModal.addEventListener("click", (ev) => {
+      if (ev.target === howModal) closeModal();
     });
   }
 }
