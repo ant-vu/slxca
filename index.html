@@ -155,13 +155,13 @@
       </section>
 
     <script src="app.js"></script>
-    <div id="how-modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div id="how-modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="how-modal-title" aria-describedby="how-modal-desc">
       <div class="modal-card">
-        <h3>How trait normalization works</h3>
-        <p class="small">Each question is answered on a 1–5 scale. For each trait we average the answers of the questions that map to that trait. A trait average of 1 maps to 0% (low), 3 maps to 50%, and 5 maps to 100% (high). The bars and radar both use the same normalized values for consistency.</p>
+        <h3 id="how-modal-title">How trait normalization works</h3>
+        <p id="how-modal-desc" class="small">Each question is answered on a 15 scale. For each trait we average the answers of the questions that map to that trait. A trait average of 1 maps to 0% (low), 3 maps to 50%, and 5 maps to 100% (high). The bars and radar both use the same normalized values for consistency.</p>
         <p class="small">This is a lightweight, client-side heuristic to help match people and projects. For better accuracy answer all questions and consider adding more items or reverse-scored questions in future iterations.</p>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="how-close" class="btn">Close</button>
+          <button id="how-close" class="btn" type="button" aria-label="Close dialog">Close</button>
         </div>
       </div>
     </div>
