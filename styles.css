@@ -218,6 +218,15 @@ select {
   height: 100%;
   display: block;
 }
+/* small radar for project cards */
+.project-radar {
+  width: 84px;
+  height: 84px;
+  flex: 0 0 84px;
+}
+.project-card .meta {
+  display: block;
+}
 
 /* Tooltip for info icons */
 .info {

@@ -352,6 +352,17 @@ function renderProjectsFiltered(opts) {
       tags.appendChild(t);
     });
     left.appendChild(tags);
+    // if project has declared traits, render a small radar beside the card
+    if (p.traits) {
+      const norm = Object.fromEntries(
+        Object.keys(p.traits).map((k) => [k, (p.traits[k] - 1) / 4])
+      );
+      const radarWrap = document.createElement("div");
+      radarWrap.className = "project-radar";
+      radarWrap.innerHTML = buildRadarSvg(norm, 84, false);
+      // insert radar at top of left column
+      left.insertBefore(radarWrap, left.firstChild);
+    }
     const actions = document.createElement("div");
     actions.style.display = "flex";
     actions.style.flexDirection = "column";
@@ -432,17 +443,27 @@ function showProjectDetails(p) {
   card.style.background = "var(--panel)";
   card.style.padding = "18px";
   card.style.borderRadius = "10px";
-  card.innerHTML = `<h2>${escapeHtml(
+  let detailsHtml = `<h2>${escapeHtml(
     p.title
   )}</h2><div class="small">${escapeHtml(p.authors || "")} — ${escapeHtml(
     p.institution || ""
   )}</div><p>${escapeHtml(
     p.abstract || ""
-  )}</p><div class="small">Strategic: ${(p.advantages || []).join(
-    ", "
-  )}</div><div style="margin-top:12px" class="small">Joiners: ${
+  )}</p><div class="small">Strategic: ${(p.advantages || []).join(", ")}</div>`;
+  if (p.traits) {
+    const norm = Object.fromEntries(
+      Object.keys(p.traits).map((k) => [k, (p.traits[k] - 1) / 4])
+    );
+    detailsHtml += `<div style="margin-top:12px">${buildRadarSvg(
+      norm,
+      200,
+      true
+    )}</div>`;
+  }
+  detailsHtml += `<div style="margin-top:12px" class="small">Joiners: ${
     (p.joiners || []).map((j) => j.name).join(", ") || "—"
   }</div>`;
+  card.innerHTML = detailsHtml;
   const close = document.createElement("button");
   close.className = "btn";
   close.textContent = "Close";
@@ -541,7 +562,65 @@ function renderTraitRadar(pf) {
       )}</text>`;
     })
     .join("\n");
-  const svg = `
+  const svg = buildRadarSvg(normalized, size, true);
+  container.innerHTML = svg;
+}
+
+// build a radar SVG string from normalized trait values (0..1)
+function buildRadarSvg(normalized, size = 160, showLabels = false) {
+  const order = [
+    "drive",
+    "collaboration",
+    "technical",
+    "risk_aversion",
+    "speed",
+    "compliance",
+    "scale",
+    "long_term",
+  ];
+  const cx = size / 2,
+    cy = size / 2,
+    r = size / 2 - 12;
+  const angleStep = (Math.PI * 2) / order.length;
+  const points = order
+    .map((t, i) => {
+      const v = typeof normalized[t] === "number" ? normalized[t] : 0.5;
+      const rad = v * r;
+      const ang = -Math.PI / 2 + i * angleStep; // start at top
+      const x = cx + Math.cos(ang) * rad;
+      const y = cy + Math.sin(ang) * rad;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  const rings = [0.33, 0.66, 1]
+    .map((f) => {
+      const pts = order
+        .map((t, i) => {
+          const ang = -Math.PI / 2 + i * angleStep;
+          const x = cx + Math.cos(ang) * r * f;
+          const y = cy + Math.sin(ang) * r * f;
+          return `${x},${y}`;
+        })
+        .join(" ");
+      return `<polygon points="${pts}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+    })
+    .join("\n");
+  const labels = showLabels
+    ? order
+        .map((t, i) => {
+          const ang = -Math.PI / 2 + i * angleStep;
+          const x = cx + Math.cos(ang) * (r + 12);
+          const y = cy + Math.sin(ang) * (r + 12) + 4;
+          return `<text x="${x.toFixed(1)}" y="${y.toFixed(
+            1
+          )}" font-size="11" fill="var(--muted)" text-anchor="middle">${t.replaceAll(
+            "_",
+            " "
+          )}</text>`;
+        })
+        .join("\n")
+    : "";
+  return `
     <svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="g1" x1="0%" x2="100%">
@@ -566,7 +645,6 @@ function renderTraitRadar(pf) {
       ${labels}
     </svg>
   `;
-  container.innerHTML = svg;
 }
 
 function renderTraitSummary(pf) {
@@ -774,7 +852,25 @@ function init() {
     const advantages = $$("#advantage-chips .chip.active").map(
       (x) => x.textContent
     );
-    saveProject({ title, authors, institution, abstract, advantages });
+    // read optional project trait selects (1..5)
+    const traitKeys = [
+      "drive",
+      "collaboration",
+      "technical",
+      "risk_aversion",
+      "speed",
+      "compliance",
+      "scale",
+      "long_term",
+    ];
+    const traits = {};
+    traitKeys.forEach((k) => {
+      const el = $("#proj-trait-" + k);
+      if (el && el.value) traits[k] = parseInt(el.value, 10);
+    });
+    const proj = { title, authors, institution, abstract, advantages };
+    if (Object.keys(traits).length) proj.traits = traits;
+    saveProject(proj);
     $("#paper-form").reset();
     $$("#advantage-chips .chip").forEach((c) => c.classList.remove("active"));
   };

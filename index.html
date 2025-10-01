@@ -67,6 +67,36 @@
               <button type="button" class="chip">AI / Compute</button>
             </div>
           </label>
+          <fieldset id="project-traits" style="margin-top:8px;border:1px dashed rgba(255,255,255,0.03);padding:10px;border-radius:8px">
+            <legend style="font-size:13px;color:var(--muted);">Project trait profile (optional)</legend>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+              <label>Drive
+                <select id="proj-trait-drive"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+              </label>
+              <label>Collaboration
+                <select id="proj-trait-collaboration"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+              </label>
+              <label>Technical
+                <select id="proj-trait-technical"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+              </label>
+              <label>Risk aversion
+                <select id="proj-trait-risk_aversion"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+              </label>
+              <label>Speed
+                <select id="proj-trait-speed"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+              </label>
+              <label>Compliance
+                <select id="proj-trait-compliance"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+              </label>
+              <label>Scale
+                <select id="proj-trait-scale"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+              </label>
+              <label>Long term
+                <select id="proj-trait-long_term"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+              </label>
+            </div>
+            <div class="small" style="margin-top:8px;color:var(--muted)">Optional: declare the project's ideal trait profile (1=low .. 5=high). Used to visualize and improve matching.</div>
+          </fieldset>
           <div class="form-row">
             <button id="submit-paper" type="submit" class="btn primary">
               Submit Paper
