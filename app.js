@@ -766,39 +766,64 @@ function scoreMatch(p, pf) {
     Resources: { long_term: 2, scale: 2 },
     "AI / Compute": { technical: 4, speed: 3 },
   };
-  if (pf.traits) {
-    // build project trait vector
-    const projTraits = {};
-    (p.advantages || []).forEach((a) => {
-      const map = ADV_TO_TRAITS[a];
-      if (!map) return;
-      Object.keys(map).forEach((k) => {
-        projTraits[k] = (projTraits[k] || 0) + map[k];
-      });
-    });
-    // normalize and compute simple similarity (inverse Euclidean distance)
-    if (Object.keys(projTraits).length) {
-      // project trait weights are heuristic integers; convert both sides to normalized 0..1
-      const userNorm = pf.traitNormalized || pf.traits || {};
-      // first, determine max value in projTraits for normalization
-      const maxVal = Math.max(...Object.values(projTraits));
+  // Only compute trait similarity if the user has trait data
+  const userNorm =
+    pf.traitNormalized ||
+    (pf.traits
+      ? Object.fromEntries(
+          Object.keys(pf.traits).map((k) => [k, (pf.traits[k] - 1) / 4])
+        )
+      : null);
+  if (userNorm) {
+    if (p.traits) {
+      // project has declared traits (1..5) — use them directly
+      const projNorm = Object.fromEntries(
+        Object.keys(p.traits).map((k) => [k, (p.traits[k] - 1) / 4])
+      );
       const dims = Array.from(
-        new Set([...Object.keys(userNorm), ...Object.keys(projTraits)])
+        new Set([...Object.keys(userNorm), ...Object.keys(projNorm)])
       );
       let sumSq = 0;
       dims.forEach((d) => {
-        const ptRaw = projTraits[d] || 0;
-        const pt = maxVal > 0 ? ptRaw / maxVal : 0; // normalize proj trait to 0..1
-        const vt = typeof userNorm[d] === "number" ? userNorm[d] : 0.5; // default neutral 0.5
+        const pt = typeof projNorm[d] === "number" ? projNorm[d] : 0;
+        const vt = typeof userNorm[d] === "number" ? userNorm[d] : 0.5;
         const diff = vt - pt;
         sumSq += diff * diff;
       });
       const dist = Math.sqrt(sumSq);
-      // convert distance to a small bonus (higher when closer). scale: max possible dist sqrt(n)
       const maxDist = Math.sqrt(dims.length);
-      const closeness = 1 - Math.min(dist / maxDist, 1); // 0..1
-      const traitScore = Math.round(closeness * 6); // up to +6 bonus
+      const closeness = 1 - Math.min(dist / maxDist, 1);
+      const traitScore = Math.round(closeness * 6);
       score += traitScore;
+    } else {
+      // fallback: infer project trait vector from advantages (legacy heuristic)
+      const projTraits = {};
+      (p.advantages || []).forEach((a) => {
+        const map = ADV_TO_TRAITS[a];
+        if (!map) return;
+        Object.keys(map).forEach((k) => {
+          projTraits[k] = (projTraits[k] || 0) + map[k];
+        });
+      });
+      if (Object.keys(projTraits).length) {
+        const maxVal = Math.max(...Object.values(projTraits));
+        const dims = Array.from(
+          new Set([...Object.keys(userNorm), ...Object.keys(projTraits)])
+        );
+        let sumSq = 0;
+        dims.forEach((d) => {
+          const ptRaw = projTraits[d] || 0;
+          const pt = maxVal > 0 ? ptRaw / maxVal : 0; // normalize proj trait to 0..1
+          const vt = typeof userNorm[d] === "number" ? userNorm[d] : 0.5;
+          const diff = vt - pt;
+          sumSq += diff * diff;
+        });
+        const dist = Math.sqrt(sumSq);
+        const maxDist = Math.sqrt(dims.length);
+        const closeness = 1 - Math.min(dist / maxDist, 1);
+        const traitScore = Math.round(closeness * 6);
+        score += traitScore;
+      }
     }
   }
   return score;
