@@ -451,14 +451,32 @@ function showProjectDetails(p) {
     p.abstract || ""
   )}</p><div class="small">Strategic: ${(p.advantages || []).join(", ")}</div>`;
   if (p.traits) {
-    const norm = Object.fromEntries(
+    const projNorm = Object.fromEntries(
       Object.keys(p.traits).map((k) => [k, (p.traits[k] - 1) / 4])
     );
-    detailsHtml += `<div style="margin-top:12px">${buildRadarSvg(
-      norm,
-      200,
-      true
-    )}</div>`;
+    // attempt to load user profile normalized traits
+    const pf = loadProfile();
+    const userNorm =
+      (pf && pf.traitNormalized) ||
+      (pf && pf.traits
+        ? Object.fromEntries(
+            Object.keys(pf.traits).map((k) => [k, (pf.traits[k] - 1) / 4])
+          )
+        : null);
+    if (userNorm) {
+      detailsHtml += `<div style="margin-top:12px">${buildOverlayRadarSvg(
+        userNorm,
+        projNorm,
+        220
+      )}</div>`;
+      detailsHtml += `<div class="radar-legend"><div class="key"><span class="swatch user"></span>User</div><div class="key"><span class="swatch project"></span>Project</div></div>`;
+    } else {
+      detailsHtml += `<div style="margin-top:12px">${buildRadarSvg(
+        projNorm,
+        200,
+        true
+      )}</div>`;
+    }
   }
   detailsHtml += `<div style="margin-top:12px" class="small">Joiners: ${
     (p.joiners || []).map((j) => j.name).join(", ") || "—"
@@ -642,6 +660,94 @@ function buildRadarSvg(normalized, size = 160, showLabels = false) {
         })
         .join("\n")}
       <polygon points="${points}" fill="url(#g1)" fill-opacity="0.6" stroke="#37b6a7" stroke-width="1.5" />
+      ${labels}
+    </svg>
+  `;
+}
+
+// build an overlay radar: user polygon (green) and project polygon (orange)
+function buildOverlayRadarSvg(userNorm, projNorm, size = 200) {
+  const order = [
+    "drive",
+    "collaboration",
+    "technical",
+    "risk_aversion",
+    "speed",
+    "compliance",
+    "scale",
+    "long_term",
+  ];
+  const cx = size / 2,
+    cy = size / 2,
+    r = size / 2 - 12;
+  const angleStep = (Math.PI * 2) / order.length;
+  const pointsFor = (norm) =>
+    order
+      .map((t, i) => {
+        const v = typeof norm[t] === "number" ? norm[t] : 0;
+        const rad = v * r;
+        const ang = -Math.PI / 2 + i * angleStep;
+        const x = cx + Math.cos(ang) * rad;
+        const y = cy + Math.sin(ang) * rad;
+        return `${x},${y}`;
+      })
+      .join(" ");
+  const userPts = pointsFor(userNorm);
+  const projPts = pointsFor(projNorm);
+  const rings = [0.33, 0.66, 1]
+    .map((f) => {
+      const pts = order
+        .map((t, i) => {
+          const ang = -Math.PI / 2 + i * angleStep;
+          const x = cx + Math.cos(ang) * r * f;
+          const y = cy + Math.sin(ang) * r * f;
+          return `${x},${y}`;
+        })
+        .join(" ");
+      return `<polygon points="${pts}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+    })
+    .join("\n");
+  const labels = order
+    .map((t, i) => {
+      const ang = -Math.PI / 2 + i * angleStep;
+      const x = cx + Math.cos(ang) * (r + 12);
+      const y = cy + Math.sin(ang) * (r + 12) + 4;
+      return `<text x="${x.toFixed(1)}" y="${y.toFixed(
+        1
+      )}" font-size="11" fill="var(--muted)" text-anchor="middle">${t.replaceAll(
+        "_",
+        " "
+      )}</text>`;
+    })
+    .join("\n");
+
+  return `
+    <svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="userG" x1="0%" x2="100%">
+          <stop offset="0%" stop-color="#37b6a7" stop-opacity="0.9" />
+          <stop offset="100%" stop-color="#4caf50" stop-opacity="0.9" />
+        </linearGradient>
+        <linearGradient id="projG" x1="0%" x2="100%">
+          <stop offset="0%" stop-color="#ffb74d" stop-opacity="0.95" />
+          <stop offset="100%" stop-color="#ff8a65" stop-opacity="0.95" />
+        </linearGradient>
+      </defs>
+      ${rings}
+      ${order
+        .map((t, i) => {
+          const ang = -Math.PI / 2 + i * angleStep;
+          const x = cx + Math.cos(ang) * r;
+          const y = cy + Math.sin(ang) * r;
+          return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(
+            1
+          )}" y2="${y.toFixed(
+            1
+          )}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+        })
+        .join("\n")}
+      <polygon points="${projPts}" fill="url(#projG)" fill-opacity="0.45" stroke="#ff8a65" stroke-width="1" />
+      <polygon points="${userPts}" fill="url(#userG)" fill-opacity="0.55" stroke="#37b6a7" stroke-width="1.5" />
       ${labels}
     </svg>
   `;

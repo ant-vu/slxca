@@ -228,6 +228,32 @@ select {
   display: block;
 }
 
+/* small legend for radar overlays */
+.radar-legend {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.radar-legend .key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.radar-legend .swatch {
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.radar-legend .swatch.user {
+  background: linear-gradient(90deg, #37b6a7, #4caf50);
+}
+.radar-legend .swatch.project {
+  background: linear-gradient(90deg, #ffb74d, #ff8a65);
+}
 /* Tooltip for info icons */
 .info {
   display: inline-block;
