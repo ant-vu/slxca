@@ -1154,6 +1154,93 @@ function init() {
       if (ev.target === howModal) closeModal();
     });
   }
+
+  // Export / Import local data handlers
+  const exportBtn = document.getElementById("export-data");
+  const importBtn = document.getElementById("import-data");
+  const importFile = document.getElementById("import-file");
+  if (exportBtn) {
+    exportBtn.onclick = () => {
+      const data = {
+        projects: loadProjects(),
+        profile: loadProfile(),
+        courses: loadCourses(),
+        exportedAt: new Date().toISOString(),
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `slxca-export-${new Date().toISOString()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+  }
+  if (importBtn && importFile) {
+    importBtn.onclick = () => importFile.click();
+    importFile.onchange = (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          handleImportFile(parsed);
+        } catch (err) {
+          alert("Invalid JSON file.");
+        }
+      };
+      reader.readAsText(f);
+      // clear value so same file can be reselected later
+      importFile.value = "";
+    };
+  }
+
+  function handleImportFile(parsed) {
+    if (!parsed || typeof parsed !== "object") {
+      alert("Imported file does not contain valid data.");
+      return;
+    }
+    const hasProjects = Array.isArray(parsed.projects);
+    const hasProfile = parsed.profile && typeof parsed.profile === "object";
+    const hasCourses = Array.isArray(parsed.courses);
+    if (!hasProjects && !hasProfile && !hasCourses) {
+      alert(
+        "Imported JSON must contain at least one of: projects, profile, courses."
+      );
+      return;
+    }
+    // Ask whether to overwrite or merge
+    const mode = confirm(
+      "Click OK to overwrite local data with imported data. Click Cancel to merge (append projects and replace profile/courses)."
+    )
+      ? "overwrite"
+      : "merge";
+    if (mode === "overwrite") {
+      if (hasProjects) write(LS_KEYS.PROJECTS, parsed.projects || []);
+      if (hasProfile) write(LS_KEYS.PROFILE, parsed.profile || null);
+      if (hasCourses) write(LS_KEYS.COURSES, parsed.courses || []);
+    } else {
+      // merge: append projects, replace profile and courses if present
+      if (hasProjects) {
+        const existing = loadProjects();
+        const merged = (parsed.projects || []).concat(existing || []);
+        write(LS_KEYS.PROJECTS, merged);
+      }
+      if (hasProfile) write(LS_KEYS.PROFILE, parsed.profile || null);
+      if (hasCourses) write(LS_KEYS.COURSES, parsed.courses || []);
+    }
+    // refresh UI
+    populateRoles();
+    renderProjects();
+    renderCourses();
+    renderProfile();
+    alert("Import complete.");
+  }
 }
 
 function enforceChipLimit(max) {
