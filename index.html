@@ -30,6 +30,7 @@
       <section class="panel" id="submit-section">
         <h2>Submit a Paper</h2>
         <form id="paper-form">
+          <input type="hidden" id="edit-project-id" />
           <label
             >Title<input
               required
@@ -106,6 +107,7 @@
             <button id="submit-paper" type="submit" class="btn primary">
               Submit Paper
             </button>
+            <button id="cancel-edit" type="button" class="btn" style="display:none">Cancel Edit</button>
             <button id="reset-form" type="button" class="btn">Reset</button>
           </div>
         </form>

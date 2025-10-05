@@ -99,11 +99,61 @@ function loadProjects() {
 }
 function saveProject(proj) {
   const ps = loadProjects();
-  proj.id = "p" + Date.now();
-  proj.joiners = [];
-  ps.unshift(proj);
+  if (proj.id) {
+    // update existing
+    const idx = ps.findIndex((x) => x.id === proj.id);
+    if (idx >= 0) {
+      // preserve joiners if not provided
+      proj.joiners = proj.joiners || ps[idx].joiners || [];
+      ps[idx] = proj;
+    } else {
+      ps.unshift(proj);
+    }
+  } else {
+    proj.id = "p" + Date.now();
+    proj.joiners = proj.joiners || [];
+    ps.unshift(proj);
+  }
   write(LS_KEYS.PROJECTS, ps);
   renderProjects();
+}
+
+function deleteProject(id) {
+  if (!confirm("Delete this project? This cannot be undone.")) return;
+  const ps = loadProjects();
+  const out = ps.filter((p) => p.id !== id);
+  write(LS_KEYS.PROJECTS, out);
+  renderProjects();
+}
+
+function editProject(id) {
+  const ps = loadProjects();
+  const p = ps.find((x) => x.id === id);
+  if (!p) return;
+  // prefill form
+  $("#paper-title").value = p.title || "";
+  $("#paper-authors").value = p.authors || "";
+  $("#paper-institution").value = p.institution || "";
+  $("#paper-abstract").value = p.abstract || "";
+  $$("#advantage-chips .chip").forEach((c) => c.classList.remove("active"));
+  (p.advantages || []).forEach((a) => {
+    const chip = Array.from($$("#advantage-chips .chip")).find(
+      (c) => c.textContent === a
+    );
+    if (chip) chip.classList.add("active");
+  });
+  // fill project trait selects if present
+  if (p.traits) {
+    Object.keys(p.traits).forEach((k) => {
+      const el = $("#proj-trait-" + k);
+      if (el) el.value = p.traits[k];
+    });
+  }
+  $("#edit-project-id").value = p.id;
+  const cancel = $("#cancel-edit");
+  if (cancel) cancel.style.display = "inline-block";
+  // scroll to top so user sees the form
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 function joinProject(projectId, profile) {
   const ps = loadProjects();
@@ -387,6 +437,20 @@ function renderProjectsFiltered(opts) {
     };
     actions.appendChild(joinBtn);
     actions.appendChild(viewBtn);
+    // show edit/delete for owner
+    const pf = loadProfile();
+    if (pf && pf.email && p.ownerEmail && pf.email === p.ownerEmail) {
+      const editBtn = document.createElement("button");
+      editBtn.className = "btn";
+      editBtn.textContent = "Edit";
+      editBtn.onclick = () => editProject(p.id);
+      const delBtn = document.createElement("button");
+      delBtn.className = "btn";
+      delBtn.textContent = "Delete";
+      delBtn.onclick = () => deleteProject(p.id);
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+    }
     el.appendChild(left);
     el.appendChild(actions);
 
@@ -1000,10 +1064,24 @@ function init() {
       if (el && el.value) traits[k] = parseInt(el.value, 10);
     });
     const proj = { title, authors, institution, abstract, advantages };
+    const editId = $("#edit-project-id").value;
+    if (editId) proj.id = editId;
+    // if creating new project, attach ownerEmail from profile (if available)
+    const pf = loadProfile();
+    if (!proj.id && pf && pf.email) proj.ownerEmail = pf.email;
+    // if updating, preserve existing ownerEmail unless explicitly changed
+    if (proj.id && !proj.ownerEmail) {
+      const existing = loadProjects().find((x) => x.id === proj.id) || {};
+      if (existing.ownerEmail) proj.ownerEmail = existing.ownerEmail;
+    }
     if (Object.keys(traits).length) proj.traits = traits;
     saveProject(proj);
     $("#paper-form").reset();
     $$("#advantage-chips .chip").forEach((c) => c.classList.remove("active"));
+    // clear edit state UI
+    $("#edit-project-id").value = "";
+    const cancel = $("#cancel-edit");
+    if (cancel) cancel.style.display = "none";
   };
   $("#reset-form").onclick = () => {
     if (confirm("Clear form?")) $("#paper-form").reset();
@@ -1026,6 +1104,17 @@ function init() {
   $("#clear-profile").onclick = () => {
     if (confirm("Clear saved profile?")) clearProfile();
   };
+
+  // cancel edit button
+  const cancelEdit = $("#cancel-edit");
+  if (cancelEdit) {
+    cancelEdit.onclick = () => {
+      $("#paper-form").reset();
+      $$("#advantage-chips .chip").forEach((c) => c.classList.remove("active"));
+      $("#edit-project-id").value = "";
+      cancelEdit.style.display = "none";
+    };
+  }
 
   // personality form handling
   renderPersonalityQuestions();
