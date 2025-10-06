@@ -1303,18 +1303,116 @@ function init() {
       );
       return;
     }
-    // Ask whether to overwrite or merge
-    const mode = confirm(
-      "Click OK to overwrite local data with imported data. Click Cancel to merge (append projects and replace profile/courses)."
-    )
-      ? "overwrite"
-      : "merge";
-    if (mode === "overwrite") {
+    // Show preview modal with counts and sample titles
+    const importModal = document.getElementById("import-modal");
+    const importPreview = document.getElementById("import-preview");
+    const importOverwrite = document.getElementById("import-overwrite");
+    const importMerge = document.getElementById("import-merge");
+    const importCancel = document.getElementById("import-cancel");
+    if (!importModal || !importPreview) {
+      alert("Import UI not available.");
+      return;
+    }
+    // build preview HTML
+    const parts = [];
+    if (hasProjects) {
+      parts.push(
+        `<div><strong>Projects:</strong> ${parsed.projects.length}</div>`
+      );
+      const list = (parsed.projects || [])
+        .slice(0, 6)
+        .map((p) => `<li>${escapeHtml(p.title || "(untitled)")}</li>`)
+        .join("");
+      parts.push(
+        `<ul style="margin-top:6px">${list}${
+          parsed.projects.length > 6 ? "<li>…</li>" : ""
+        }</ul>`
+      );
+    }
+    if (hasProfile) {
+      parts.push(
+        `<div style="margin-top:8px"><strong>Profile:</strong> ${escapeHtml(
+          parsed.profile.name || "(no name)"
+        )}</div>`
+      );
+      if (parsed.profile.traits)
+        parts.push(
+          `<div class="small">Profile has ${
+            Object.keys(parsed.profile.traits).length
+          } trait values.</div>`
+        );
+    }
+    if (hasCourses) {
+      parts.push(
+        `<div style="margin-top:8px"><strong>Courses:</strong> ${parsed.courses.length}</div>`
+      );
+      const clist = (parsed.courses || [])
+        .slice(0, 6)
+        .map((c) => `<li>${escapeHtml(c.title || "(untitled)")}</li>`)
+        .join("");
+      parts.push(
+        `<ul style="margin-top:6px">${clist}${
+          parsed.courses.length > 6 ? "<li>…</li>" : ""
+        }</ul>`
+      );
+    }
+    importPreview.innerHTML = parts.join("");
+
+    // open modal with focus trap similar to how-modal
+    importModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    const focusable = Array.from(
+      importModal.querySelectorAll(
+        'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(
+      (el) => el.offsetWidth || el.offsetHeight || el.getClientRects().length
+    );
+    const first = focusable[0] || importCancel;
+    const last = focusable[focusable.length - 1] || importCancel;
+    first.focus();
+    const keyHandler = function (ev) {
+      if (ev.key === "Tab") {
+        const cur = document.activeElement;
+        if (ev.shiftKey) {
+          if (cur === first) {
+            ev.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (cur === last) {
+            ev.preventDefault();
+            first.focus();
+          }
+        }
+      } else if (ev.key === "Escape") {
+        closeImport(false);
+      }
+    };
+    document.addEventListener("keydown", keyHandler);
+
+    function closeImport(didImport) {
+      importModal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+      document.removeEventListener("keydown", keyHandler);
+      // cleanup listeners
+      importOverwrite.onclick = null;
+      importMerge.onclick = null;
+      importCancel.onclick = null;
+      if (didImport) alert("Import complete.");
+    }
+
+    importOverwrite.onclick = () => {
       if (hasProjects) write(LS_KEYS.PROJECTS, parsed.projects || []);
       if (hasProfile) write(LS_KEYS.PROFILE, parsed.profile || null);
       if (hasCourses) write(LS_KEYS.COURSES, parsed.courses || []);
-    } else {
-      // merge: append projects, replace profile and courses if present
+      populateRoles();
+      renderProjects();
+      renderCourses();
+      renderProfile();
+      closeImport(true);
+    };
+    importMerge.onclick = () => {
       if (hasProjects) {
         const existing = loadProjects();
         const merged = (parsed.projects || []).concat(existing || []);
@@ -1322,13 +1420,13 @@ function init() {
       }
       if (hasProfile) write(LS_KEYS.PROFILE, parsed.profile || null);
       if (hasCourses) write(LS_KEYS.COURSES, parsed.courses || []);
-    }
-    // refresh UI
-    populateRoles();
-    renderProjects();
-    renderCourses();
-    renderProfile();
-    alert("Import complete.");
+      populateRoles();
+      renderProjects();
+      renderCourses();
+      renderProfile();
+      closeImport(true);
+    };
+    importCancel.onclick = () => closeImport(false);
   }
 }
 

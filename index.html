@@ -202,6 +202,20 @@
           <button id="how-close" class="btn" type="button" aria-label="Close dialog">Close</button>
         </div>
       </div>
+        <!-- Import preview modal -->
+        <div id="import-modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="import-modal-title" aria-describedby="import-modal-desc">
+          <div class="modal-card">
+            <h3 id="import-modal-title">Import preview</h3>
+            <div class="visually-hidden">Press Escape to close this dialog.</div>
+            <div id="import-modal-desc" class="small">Preview data before importing.</div>
+            <div id="import-preview" style="margin-top:12px"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+              <button id="import-overwrite" class="btn primary">Overwrite</button>
+              <button id="import-merge" class="btn">Merge</button>
+              <button id="import-cancel" class="btn">Cancel</button>
+            </div>
+          </div>
+        </div>
     </div>
     <script>
       document.addEventListener('DOMContentLoaded', ()=>{
