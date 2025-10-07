@@ -111,9 +111,20 @@ function saveProject(proj) {
     }
   } else {
     proj.id = "p" + Date.now();
+    const now = new Date().toISOString();
+    proj.createdAt = now;
+    proj.updatedAt = now;
     proj.joiners = proj.joiners || [];
     ps.unshift(proj);
   }
+  // ensure updatedAt is set on update
+  if (proj.id && !proj.createdAt) {
+    // if createdAt missing (older item), attempt to preserve from existing
+    const existing = ps.find((x) => x.id === proj.id);
+    if (existing && existing.createdAt) proj.createdAt = existing.createdAt;
+  }
+  // always set updatedAt to now for save/update
+  proj.updatedAt = new Date().toISOString();
   write(LS_KEYS.PROJECTS, ps);
   renderProjects();
 }
@@ -402,6 +413,17 @@ function renderProjectsFiltered(opts) {
       tags.appendChild(t);
     });
     left.appendChild(tags);
+    // show timestamps
+    const metaTime = document.createElement("div");
+    metaTime.className = "small";
+    const created = p.createdAt ? formatDate(p.createdAt) : null;
+    const updated = p.updatedAt ? formatDate(p.updatedAt) : null;
+    metaTime.textContent = updated
+      ? `Updated: ${updated}`
+      : created
+      ? `Created: ${created}`
+      : "";
+    if (metaTime.textContent) left.appendChild(metaTime);
     // if project has declared traits, render a small radar beside the card
     if (p.traits) {
       const norm = Object.fromEntries(
@@ -478,6 +500,8 @@ function seedDemo(force) {
     ...p,
     id: "p_demo_" + i,
     joiners: [],
+    createdAt: new Date(Date.now() - (i + 1) * 86400000).toISOString(),
+    updatedAt: new Date(Date.now() - (i + 1) * 3600000).toISOString(),
   }));
   write(LS_KEYS.PROJECTS, seeded);
   // seed courses
@@ -545,6 +569,15 @@ function showProjectDetails(p) {
   detailsHtml += `<div style="margin-top:12px" class="small">Joiners: ${
     (p.joiners || []).map((j) => j.name).join(", ") || "—"
   }</div>`;
+  if (p.createdAt || p.updatedAt) {
+    detailsHtml += `<div class="small" style="margin-top:8px">${
+      p.createdAt ? "Created: " + formatDate(p.createdAt) : ""
+    }${
+      p.updatedAt
+        ? (p.createdAt ? " • " : "") + "Updated: " + formatDate(p.updatedAt)
+        : ""
+    }</div>`;
+  }
   card.innerHTML = detailsHtml;
   const close = document.createElement("button");
   close.className = "btn";
@@ -1028,6 +1061,16 @@ function escapeHtml(s) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function formatDate(iso) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString();
+  } catch (e) {
+    return iso;
+  }
 }
 
 function init() {
