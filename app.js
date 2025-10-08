@@ -105,6 +105,9 @@ function saveProject(proj) {
     if (idx >= 0) {
       // preserve joiners if not provided
       proj.joiners = proj.joiners || ps[idx].joiners || [];
+      // preserve owner info if not provided
+      proj.ownerEmail = proj.ownerEmail || ps[idx].ownerEmail;
+      proj.ownerName = proj.ownerName || ps[idx].ownerName;
       ps[idx] = proj;
     } else {
       ps.unshift(proj);
@@ -476,6 +479,21 @@ function renderProjectsFiltered(opts) {
     el.appendChild(left);
     el.appendChild(actions);
 
+    // show owner info if present
+    if (p.ownerName || p.ownerEmail) {
+      const ownerDiv = document.createElement("div");
+      ownerDiv.className = "small";
+      ownerDiv.style.marginTop = "8px";
+      const parts = [];
+      if (p.ownerName) parts.push(escapeHtml(p.ownerName));
+      if (p.ownerEmail)
+        parts.push(
+          '<span class="muted">&lt;' + escapeHtml(p.ownerEmail) + "&gt;</span>"
+        );
+      ownerDiv.innerHTML = "Owner: " + parts.join(" ");
+      el.appendChild(ownerDiv);
+    }
+
     const joiners = document.createElement("div");
     joiners.className = "small";
     joiners.style.marginTop = "8px";
@@ -486,6 +504,22 @@ function renderProjectsFiltered(opts) {
         .slice(0, 5)
         .join(", ") || "—");
     el.appendChild(joiners);
+
+    // show created/updated timestamps if available
+    if (p.createdAt || p.updatedAt) {
+      const ts = document.createElement("div");
+      ts.className = "small";
+      ts.style.marginTop = "6px";
+      ts.innerHTML =
+        (p.createdAt ? "Created: " + escapeHtml(formatDate(p.createdAt)) : "") +
+        (p.updatedAt
+          ? (p.createdAt ? " • " : "") +
+            "Updated: " +
+            escapeHtml(formatDate(p.updatedAt))
+          : "");
+      el.appendChild(ts);
+    }
+
     list.appendChild(el);
   });
 }
@@ -500,6 +534,8 @@ function seedDemo(force) {
     ...p,
     id: "p_demo_" + i,
     joiners: [],
+    ownerEmail: `demo${i}@example.com`,
+    ownerName: p.authors || `Demo Author ${i + 1}`,
     createdAt: new Date(Date.now() - (i + 1) * 86400000).toISOString(),
     updatedAt: new Date(Date.now() - (i + 1) * 3600000).toISOString(),
   }));
@@ -1109,13 +1145,15 @@ function init() {
     const proj = { title, authors, institution, abstract, advantages };
     const editId = $("#edit-project-id").value;
     if (editId) proj.id = editId;
-    // if creating new project, attach ownerEmail from profile (if available)
+    // if creating new project, attach ownerEmail and ownerName from profile (if available)
     const pf = loadProfile();
     if (!proj.id && pf && pf.email) proj.ownerEmail = pf.email;
-    // if updating, preserve existing ownerEmail unless explicitly changed
-    if (proj.id && !proj.ownerEmail) {
+    if (!proj.id && pf && pf.name) proj.ownerName = pf.name;
+    // if updating, preserve existing ownerEmail/ownerName unless explicitly changed
+    if (proj.id) {
       const existing = loadProjects().find((x) => x.id === proj.id) || {};
-      if (existing.ownerEmail) proj.ownerEmail = existing.ownerEmail;
+      proj.ownerEmail = proj.ownerEmail || existing.ownerEmail;
+      proj.ownerName = proj.ownerName || existing.ownerName;
     }
     if (Object.keys(traits).length) proj.traits = traits;
     saveProject(proj);
