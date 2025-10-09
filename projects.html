@@ -27,6 +27,16 @@
       <section class="panel">
         <div class="toolbar">
           <label
+            >Stage
+            <select id="filter-stage">
+              <option value="">(all)</option>
+              <option>Idea</option>
+              <option>Prototype</option>
+              <option>Funded</option>
+              <option>Research</option>
+            </select></label
+          >
+          <label
             >Filter advantage
             <select id="filter-adv">
               <option value="">(all)</option>
@@ -60,6 +70,7 @@
     <script>
       // wire up filters for this page
       document.addEventListener("DOMContentLoaded", () => {
+        const stage = document.getElementById("filter-stage");
         const adv = document.getElementById("filter-adv");
         const search = document.getElementById("filter-search");
         const clear = document.getElementById("clear-filters");
@@ -67,11 +78,14 @@
           window._canapp.renderProjectsFiltered({
             advantage: adv.value,
             text: search.value,
+            stage: stage ? stage.value : "",
           });
         }
+        if (stage) stage.onchange = apply;
         adv.onchange = apply;
         search.oninput = apply;
         clear.onclick = () => {
+          if (stage) stage.value = "";
           adv.value = "";
           search.value = "";
           apply();

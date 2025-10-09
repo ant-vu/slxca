@@ -50,6 +50,7 @@ const DEMO_PROJECTS = [
     abstract:
       "Optimizing placement of data centres in regions with abundant cheap hydro power to reduce cooling costs and carbon footprint.",
     advantages: ["Cheap Energy", "Data Centres"],
+    stage: "Research",
   },
   {
     title: "Methane Capture for Grid Stability",
@@ -58,6 +59,7 @@ const DEMO_PROJECTS = [
     abstract:
       "Novel catalytic approach to capture and convert methane emissions into dispatchable energy.",
     advantages: ["Methane", "Resources"],
+    stage: "Prototype",
   },
   {
     title: "Nuclear Microreactors for Distributed Compute",
@@ -66,6 +68,7 @@ const DEMO_PROJECTS = [
     abstract:
       "Design and safety models for small modular reactors powering edge data centres.",
     advantages: ["Nuclear", "Cheap Energy", "AI / Compute"],
+    stage: "Idea",
   },
   {
     title: "Sustainable Lumber Supply Chains",
@@ -74,6 +77,7 @@ const DEMO_PROJECTS = [
     abstract:
       "Blockchain-backed traceability for lumber supply to support sustainable construction.",
     advantages: ["Land & Lumber", "Resources"],
+    stage: "Prototype",
   },
 ];
 
@@ -162,6 +166,11 @@ function editProject(id) {
       const el = $("#proj-trait-" + k);
       if (el) el.value = p.traits[k];
     });
+  }
+  // prefill stage if present
+  if (p.stage) {
+    const stageEl = $("#paper-stage");
+    if (stageEl) stageEl.value = p.stage;
   }
   $("#edit-project-id").value = p.id;
   const cancel = $("#cancel-edit");
@@ -374,6 +383,10 @@ function renderProjectsFiltered(opts) {
   list.innerHTML = "";
   const projects = loadProjects();
   const filtered = projects.filter((p) => {
+    if (opts.stage && opts.stage.trim()) {
+      if ((p.stage || "").toLowerCase() !== opts.stage.trim().toLowerCase())
+        return false;
+    }
     if (opts.advantage && opts.advantage.trim()) {
       const adv = opts.advantage.trim().toLowerCase();
       if (!(p.advantages || []).map((a) => a.toLowerCase()).includes(adv))
@@ -406,7 +419,9 @@ function renderProjectsFiltered(opts) {
       p.title
     )}</h3><div class="meta">${escapeHtml(p.authors || "")} — ${escapeHtml(
       p.institution || ""
-    )}</div><div class="small">${escapeHtml(p.abstract || "")}</div>`;
+    )} ${
+      p.stage ? "• " + escapeHtml(p.stage) : ""
+    }</div><div class="small">${escapeHtml(p.abstract || "")}</div>`;
     const tags = document.createElement("div");
     tags.className = "tags";
     (p.advantages || []).forEach((a) => {
@@ -1142,7 +1157,8 @@ function init() {
       const el = $("#proj-trait-" + k);
       if (el && el.value) traits[k] = parseInt(el.value, 10);
     });
-    const proj = { title, authors, institution, abstract, advantages };
+    const stage = (document.getElementById("paper-stage") || {}).value || "";
+    const proj = { title, authors, institution, abstract, advantages, stage };
     const editId = $("#edit-project-id").value;
     if (editId) proj.id = editId;
     // if creating new project, attach ownerEmail and ownerName from profile (if available)

@@ -9,6 +9,7 @@ This prototype is intentionally client-only (plain HTML/CSS/JS) and stores demo 
 Features in this prototype
 
 - Submit a paper / idea (title, authors, institution, abstract, strategic advantages)
+- Submit a paper / idea (title, authors, institution, abstract, strategic advantages, stage)
 - Browse and filter projects (entrepreneur/executor POV at `projects.html`)
 - Create a simple role profile (role preference, skills) and view quick matches
 - Join a project (adds you to the project's joiners)
@@ -37,6 +38,7 @@ open index.html
 ## Data model (localStorage)
 
 - `canproj_projects` — Array of project objects: { id, title, authors, institution, abstract, advantages: [], joiners: [] }
+- `canproj_projects` — Array of project objects: { id, title, authors, institution, abstract, advantages: [], stage, joiners: [] }
 - `canproj_profile` — Single saved profile object: { name, email, role, skills: [], affiliation?, courses: [] }
 - `canproj_courses` — Array of available course objects: { id, title, provider, duration }
 
@@ -68,6 +70,7 @@ If you'd like, I can:
 
 - Expand the personality/profile flow (client-only) with 8–12 questions and trait vector matching.
 - Scaffold a minimal backend (Node/Express + SQLite) to persist projects and support basic authentication.
+- Add richer project metadata and filters (stage, funding, required roles).
 - Add richer project metadata and filters (stage, funding, required roles).
 
 Pick a next step and I'll update the plan and implement it.
