@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>SLXCA — Smoke tests</title>
+    <style>
+      body {
+        font-family: Inter, system-ui, Arial;
+        margin: 20px;
+        background: #071022;
+        color: #e6eef8;
+      }
+      .panel {
+        background: #0b1220;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
+      .ok {
+        color: #7fffd4;
+      }
+      .fail {
+        color: #ff8a65;
+      }
+      pre {
+        background: #061422;
+        padding: 10px;
+        border-radius: 6px;
+        overflow: auto;
+      }
+      button {
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: #37b6a7;
+        border: none;
+        color: #042024;
+        cursor: pointer;
+      }
+      iframe {
+        width: 100%;
+        height: 640px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SLXCA — Automated smoke tests</h1>
+    <div class="panel">
+      <p>
+        This page loads <code>index.html</code> in an iframe and runs a few
+        quick, client-only smoke checks using the app's
+        <code>window._canapp</code> API and <code>localStorage</code>. Open the
+        iframe below to view the app while tests run. Press Run Tests to start.
+      </p>
+      <div style="display: flex; gap: 8px; align-items: center">
+        <button id="run">Run Tests</button>
+        <button id="clear">Clear localStorage</button>
+        <div id="status"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <ol id="results"></ol>
+    </div>
+
+    <iframe id="appframe" src="index.html" title="SLXCA app"></iframe>
+
+    <script>
+      const iframe = document.getElementById("appframe");
+      const btn = document.getElementById("run");
+      const clearBtn = document.getElementById("clear");
+      const results = document.getElementById("results");
+      const status = document.getElementById("status");
+
+      function addResult(text, ok, info) {
+        const li = document.createElement("li");
+        li.innerHTML =
+          (ok
+            ? '<span class="ok">PASS</span>'
+            : '<span class="fail">FAIL</span>') +
+          " — " +
+          text +
+          (info ? "<pre>" + info + "</pre>" : "");
+        results.appendChild(li);
+      }
+
+      function safePost(fn) {
+        try {
+          fn();
+        } catch (e) {
+          addResult("Exception: " + e.message, false);
+        }
+      }
+
+      async function runTests() {
+        results.innerHTML = "";
+        status.textContent = "Waiting for iframe...";
+        // wait for iframe to be ready and expose window._canapp
+        const appWindow = iframe.contentWindow;
+        const start = Date.now();
+        while (!appWindow || !appWindow._canapp) {
+          if (Date.now() - start > 5000) {
+            addResult(
+              "App iframe did not expose window._canapp within 5s",
+              false
+            );
+            status.textContent = "";
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        status.textContent = "Running";
+        // 1) Seed demo (overwrite) and verify projects exist
+        safePost(() => {
+          appWindow._canapp.seedDemo(true);
+          const projs = appWindow._canapp.loadProjects();
+          addResult(
+            "Seed demo creates >0 projects",
+            projs && projs.length > 0,
+            "Projects: " + (projs ? projs.length : 0)
+          );
+        });
+        // 2) Save profile and verify saved
+        safePost(() => {
+          const prof = {
+            name: "Test User",
+            email: "test@example.com",
+            role: "Engineer / Technical Lead",
+            skills: ["data", "hydro"],
+          };
+          appWindow._canapp.loadProfile &&
+            localStorage.setItem("canproj_profile", JSON.stringify(prof));
+          const loaded = appWindow._canapp.loadProfile();
+          addResult(
+            "Save and load profile via localStorage",
+            loaded && loaded.email === "test@example.com",
+            JSON.stringify(loaded)
+          );
+        });
+        // 3) Join a project (first seeded project) and verify joiner added
+        safePost(() => {
+          const projects = appWindow._canapp.loadProjects();
+          if (!projects || projects.length === 0) {
+            addResult("No projects to join", false);
+            return;
+          }
+          const pid = projects[0].id;
+          const pf = appWindow._canapp.loadProfile();
+          const ok = appWindow._canapp.joinProject(pid, pf);
+          const after = appWindow._canapp
+            .loadProjects()
+            .find((p) => p.id === pid);
+          const joined =
+            after.joiners && after.joiners.find((j) => j.email === pf.email);
+          addResult(
+            "Join project adds current profile as joiner",
+            ok && !!joined,
+            "Joiners now: " +
+              (after.joiners || []).map((j) => j.email).join(",")
+          );
+        });
+        // 4) Filter by stage using renderProjectsFiltered and verify filtered subset
+        safePost(() => {
+          // pick a stage from seeded projects
+          const projs = appWindow._canapp.loadProjects();
+          const stage = projs[0].stage || "";
+          appWindow._canapp.renderProjectsFiltered({ stage: stage });
+          // We can't read DOM of parent app safely cross-origin, but we can at least ensure no exception and call succeeded
+          addResult(
+            "Filtering by stage executed (no exception)",
+            true,
+            "Stage used: " + stage
+          );
+        });
+        // 5) Export data (generate JSON blob) and verify structure
+        safePost(() => {
+          const data = {
+            projects: appWindow._canapp.loadProjects(),
+            profile: appWindow._canapp.loadProfile(),
+            courses: appWindow._canapp.loadCourses(),
+          };
+          const ok = data.projects && data.profile && data.courses;
+          addResult(
+            "Export payload contains projects/profile/courses",
+            ok,
+            JSON.stringify({
+              projects: data.projects.length,
+              hasProfile: !!data.profile,
+              courses: data.courses.length,
+            })
+          );
+        });
+        status.textContent = "Done";
+      }
+
+      btn.onclick = runTests;
+      clearBtn.onclick = () => {
+        if (!confirm("Clear localStorage for this origin?")) return;
+        iframe.contentWindow.localStorage.clear();
+        results.innerHTML = "";
+        addResult("localStorage cleared", true);
+      };
+    </script>
+  </body>
+</html>
