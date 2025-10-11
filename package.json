@@ -1,0 +1,15 @@
+{
+  "name": "slxca",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "http-server": "^14.1.1"
+  },
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "playwright:install": "npx playwright install"
+  },
+  "prepare": "npx playwright install"
+}
