@@ -133,6 +133,25 @@ select {
 .project-card .left {
   flex: 1;
 }
+.project-card .actions {
+  flex: 0 0 140px;
+}
+.stage-badge {
+  margin-left: 8px;
+}
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.seed-btn {
+  background: #ffb74d;
+  border-color: #ffb74d;
+  color: #3b2300;
+}
+.project-card .left {
+  flex: 1;
+}
 .project-card h3 {
   margin: 0 0 6px;
   font-size: 18px;
@@ -147,6 +166,31 @@ select {
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 8px;
+}
+.stage-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #042024;
+  background: #cfd8dc;
+}
+.stage-idea {
+  background: linear-gradient(90deg, #b3baf0, #8f93f7);
+  color: #041034;
+}
+.stage-prototype {
+  background: linear-gradient(90deg, #90caf9, #42a5f5);
+  color: #031430;
+}
+.stage-funded {
+  background: linear-gradient(90deg, #a5d6a7, #66bb6a);
+  color: #03220b;
+}
+.stage-research {
+  background: linear-gradient(90deg, #ffcc80, #ffb74d);
+  color: #3b2300;
 }
 .project-card .tag-chip {
   background: rgba(255, 255, 255, 0.03);
