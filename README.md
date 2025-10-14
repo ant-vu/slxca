@@ -20,6 +20,7 @@ Features in this prototype
 - `index.html` — Main app: paper submission, browse, profile, matches, and courses.
 - `projects.html` — Entrepreneur / executor view: filter and browse projects.
 - `styles.css` — Styling for the prototype (dark theme).
+- Theme toggle — a persistent animated light/dark toggle is available in the header (stored in localStorage).
 - `app.js` — Client-side logic, storage (uses `localStorage`), and demo seed.
 - `README.md` — This file.
 

@@ -1253,6 +1253,41 @@ function init() {
   // populate role dropdown
   populateRoles();
 
+  // theme toggle wiring
+  const themeBtn = document.getElementById("theme-toggle");
+  if (themeBtn) {
+    // reflect stored theme
+    const stored = (function () {
+      try {
+        return localStorage.getItem("slxca_theme");
+      } catch (e) {
+        return null;
+      }
+    })();
+    if (stored === "light" || stored === "dark") {
+      document.documentElement.setAttribute("data-theme", stored);
+      themeBtn.setAttribute(
+        "aria-pressed",
+        stored === "light" ? "true" : "false"
+      );
+    } else {
+      // default: use prefers-color-scheme if available
+      try {
+        if (
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: light)").matches
+        ) {
+          document.documentElement.setAttribute("data-theme", "light");
+          themeBtn.setAttribute("aria-pressed", "true");
+        }
+      } catch (e) {}
+    }
+    themeBtn.onclick = (ev) => {
+      ev.preventDefault();
+      toggleTheme();
+    };
+  }
+
   // initial render
   renderProjects();
   renderProfile();
@@ -1550,6 +1585,38 @@ function populateRoles() {
     opt.value = r;
     sel.appendChild(opt);
   });
+}
+
+// Theme helpers: persistent light/dark with small animation
+function setTheme(t) {
+  try {
+    if (t === "light" || t === "dark") {
+      document.documentElement.setAttribute("data-theme", t);
+      localStorage.setItem("slxca_theme", t);
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+      localStorage.removeItem("slxca_theme");
+    }
+  } catch (e) {}
+  // update button aria/state
+  const btn = document.getElementById("theme-toggle");
+  if (btn) {
+    const pressed =
+      (document.documentElement.getAttribute("data-theme") || "") === "light";
+    btn.setAttribute("aria-pressed", pressed ? "true" : "false");
+  }
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "light" ? "dark" : "light";
+  // add slight icon pulse for feedback
+  const icon = document.querySelector(".theme-icon");
+  if (icon) {
+    icon.style.transform = "scale(0.86)";
+    setTimeout(() => (icon.style.transform = ""), 220);
+  }
+  setTheme(next);
 }
 
 window._canapp = {

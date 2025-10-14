@@ -5,6 +5,14 @@
   --accent: #37b6a7;
   --glass: rgba(255, 255, 255, 0.03);
 }
+/* Light theme overrides when [data-theme="light"] is set on <html> */
+html[data-theme="light"] {
+  --bg: #f6f8fb;
+  --panel: #ffffff;
+  --muted: #51606d;
+  --accent: #2b9f9a;
+  --glass: rgba(2, 6, 15, 0.03);
+}
 /* Utility: visually-hidden (screen-reader only) */
 .visually-hidden {
   position: absolute !important;
@@ -24,8 +32,9 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, "Helvetica Neue", Arial;
   margin: 0;
-  background: linear-gradient(180deg, #071022 0%, #061422 60%);
-  color: #e6eef8;
+  background: linear-gradient(180deg, var(--bg) 0%, rgba(0, 0, 0, 0.02) 60%);
+  color: var(--muted);
+  transition: background 260ms ease, color 200ms ease;
 }
 .container {
   max-width: 980px;
@@ -98,7 +107,7 @@ select {
 }
 .chip.active {
   background: var(--accent);
-  color: #042024;
+  color: var(--panel);
   border-color: var(--accent);
 }
 .form-row {
@@ -248,7 +257,64 @@ select {
   height: 100%;
   background: linear-gradient(90deg, var(--accent), #4caf50);
   width: 0%;
-  transition: width 300ms ease;
+  transition: width 420ms cubic-bezier(0.2, 0.9, 0.2, 1), background 260ms ease;
+}
+
+/* Theme toggle icon */
+#theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.theme-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  transition: all 320ms ease;
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.08);
+}
+html[data-theme="dark"] .theme-icon {
+  background: radial-gradient(
+    circle at 30% 30%,
+    #ffd54f 0%,
+    #ffb74d 30%,
+    #ff8a65 70%
+  );
+}
+html[data-theme="light"] .theme-icon {
+  background: linear-gradient(90deg, #fff 0%, #f0f4f8 100%);
+  border: 1px solid rgba(2, 6, 15, 0.06);
+}
+.theme-icon::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.8);
+  transition: transform 320ms ease, opacity 220ms ease;
+}
+html[data-theme="dark"] .theme-icon::after {
+  opacity: 0;
+  transform: scale(0.2);
+}
+html[data-theme="light"] .theme-icon::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* subtle page-wide color transition */
+.container,
+.panel,
+.project-card,
+.modal-card {
+  transition: background-color 260ms ease, box-shadow 260ms ease,
+    color 200ms ease;
 }
 .trait-value {
   width: 36px;
