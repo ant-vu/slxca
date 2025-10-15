@@ -1619,6 +1619,38 @@ function toggleTheme() {
   setTheme(next);
 }
 
+// Small transient toast helper
+function showToast(msg, ms = 1700) {
+  const el = document.getElementById("toast");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => {
+    el.classList.remove("show");
+  }, ms);
+}
+
+// Keyboard shortcut: press 'T' (lower or upper) to toggle theme when not typing
+document.addEventListener("keydown", (ev) => {
+  if (!ev.key) return;
+  // ignore if user is typing in form controls
+  const active = document.activeElement;
+  if (
+    active &&
+    (active.tagName === "INPUT" ||
+      active.tagName === "TEXTAREA" ||
+      active.isContentEditable)
+  )
+    return;
+  if (ev.key.toLowerCase() === "t") {
+    ev.preventDefault();
+    toggleTheme();
+    const cur = document.documentElement.getAttribute("data-theme");
+    showToast(cur === "light" ? "Light theme" : "Dark theme");
+  }
+});
+
 window._canapp = {
   loadProjects,
   loadProfile,
