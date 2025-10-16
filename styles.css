@@ -45,6 +45,48 @@ body {
   padding: 28px 0 8px;
 }
 .site-header h1 {
+  /* SVG icon styles inside the toggle */
+  .theme-icon svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    color: var(--accent);
+    transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      opacity 260ms ease;
+  }
+  .theme-icon .icon-sun {
+    opacity: 0;
+    transform: rotate(-10deg) scale(0.9);
+  }
+  .theme-icon .icon-moon {
+    opacity: 0;
+    transform: rotate(8deg) scale(0.9);
+  }
+  html[data-theme="light"] .theme-icon .icon-sun {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+    color: #f6c84c;
+  }
+  html[data-theme="light"] .theme-icon .icon-moon {
+    opacity: 0;
+    transform: rotate(-6deg) scale(0.8);
+  }
+  html[data-theme="dark"] .theme-icon .icon-moon {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+    color: #ffffff;
+  }
+  html[data-theme="dark"] .theme-icon .icon-sun {
+    opacity: 0;
+    transform: rotate(6deg) scale(0.8);
+  }
+
+  /* Toggle animation helper class (applied briefly by JS) */
+  .theme-toggle-anim {
+    transform: rotate(20deg) scale(0.86);
+  }
   margin: 0;
   font-size: 28px;
 }

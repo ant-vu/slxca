@@ -1612,9 +1612,15 @@ function toggleTheme() {
   const next = cur === "light" ? "dark" : "light";
   // add slight icon pulse for feedback
   const icon = document.querySelector(".theme-icon");
+  const btn = document.getElementById("theme-toggle");
   if (icon) {
+    // brief scale to give tactile feedback
     icon.style.transform = "scale(0.86)";
     setTimeout(() => (icon.style.transform = ""), 220);
+  }
+  if (btn) {
+    btn.classList.add("theme-toggle-anim");
+    setTimeout(() => btn.classList.remove("theme-toggle-anim"), 260);
   }
   setTheme(next);
 }
