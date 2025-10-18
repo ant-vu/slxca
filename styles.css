@@ -87,6 +87,54 @@ body {
   .theme-toggle-anim {
     transform: rotate(20deg) scale(0.86);
   }
+
+  /* Sun / moon polished styles */
+  .theme-icon .icon-sun .sun-core {
+    fill: #f6c84c;
+  }
+  .theme-icon .icon-sun .sun-rays {
+    stroke: #f6c84c;
+    stroke-opacity: 0.95;
+    fill: none;
+  }
+  .theme-icon .icon-moon path {
+    fill: #ffffff;
+    opacity: 0.95;
+  }
+
+  /* Theme-specific color overrides (use CSS vars) */
+  html[data-theme="light"] .theme-icon .sun-core {
+    fill: #f6c84c;
+  }
+  html[data-theme="light"] .theme-icon .sun-rays {
+    stroke: #f6c84c;
+  }
+  html[data-theme="light"] .theme-icon .icon-moon path {
+    fill: rgba(2, 6, 15, 0.06);
+  }
+  html[data-theme="dark"] .theme-icon .sun-core {
+    fill: rgba(255, 255, 255, 0.06);
+  }
+  html[data-theme="dark"] .theme-icon .sun-rays {
+    stroke: rgba(255, 255, 255, 0.08);
+  }
+  html[data-theme="dark"] .theme-icon .icon-moon path {
+    fill: #ffffff;
+  }
+
+  /* Slight translate for 'morph' feel when switching */
+  .theme-icon .icon-sun {
+    transform-origin: 50% 50%;
+  }
+  .theme-icon .icon-moon {
+    transform-origin: 50% 50%;
+  }
+  html[data-theme="light"] .theme-icon .icon-moon {
+    transform: translateX(2px) scale(0.92);
+  }
+  html[data-theme="dark"] .theme-icon .icon-sun {
+    transform: translateX(-2px) scale(0.92);
+  }
   margin: 0;
   font-size: 28px;
 }
