@@ -1288,6 +1288,23 @@ function init() {
     };
   }
 
+  // Quick search wiring (debounced)
+  const qs = document.getElementById("quick-search");
+  if (qs) {
+    const debounce = (fn, wait) => {
+      let t = null;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), wait);
+      };
+    };
+    const handler = debounce((ev) => {
+      const v = (ev.target.value || "").trim();
+      renderProjectsFiltered({ text: v });
+    }, 180);
+    qs.addEventListener("input", handler);
+  }
+
   // initial render
   renderProjects();
   renderProfile();
