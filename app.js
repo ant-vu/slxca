@@ -394,11 +394,26 @@ function renderProjectsFiltered(opts) {
     }
     if (opts.text && opts.text.trim()) {
       const t = opts.text.trim().toLowerCase();
+      const inTitle = (p.title || "").toLowerCase().includes(t);
+      const inAbstract = (p.abstract || "").toLowerCase().includes(t);
+      const inAuthors = (p.authors || "").toLowerCase().includes(t);
+      const inInstitution = (p.institution || "").toLowerCase().includes(t);
+      const inStage = (p.stage || "").toLowerCase().includes(t);
+      const inOwnerName = (p.ownerName || "").toLowerCase().includes(t);
+      const inOwnerEmail = (p.ownerEmail || "").toLowerCase().includes(t);
+      const inAdvantages = (p.advantages || []).some((a) =>
+        (a || "").toLowerCase().includes(t)
+      );
       if (
         !(
-          (p.title || "").toLowerCase().includes(t) ||
-          (p.abstract || "").toLowerCase().includes(t) ||
-          (p.authors || "").toLowerCase().includes(t)
+          inTitle ||
+          inAbstract ||
+          inAuthors ||
+          inInstitution ||
+          inStage ||
+          inOwnerName ||
+          inOwnerEmail ||
+          inAdvantages
         )
       )
         return false;
