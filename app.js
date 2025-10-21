@@ -1320,6 +1320,45 @@ function init() {
     qs.addEventListener("input", handler);
   }
 
+  // Quick chips wiring: stage and advantage quick filters
+  const quickChips = Array.from(document.querySelectorAll(".quick-chip"));
+  if (quickChips.length) {
+    quickChips.forEach((chip) => {
+      chip.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        // toggle active (allow multiple tag chips, but stage chips act as single-select)
+        const isStage = chip.dataset.stage !== undefined;
+        if (isStage) {
+          // deactivate other stage chips
+          quickChips
+            .filter((c) => c.dataset.stage !== undefined)
+            .forEach((c) => c.classList.remove("active"));
+          chip.classList.add("active");
+        } else {
+          chip.classList.toggle("active");
+        }
+        // collect filters
+        const stageEl = document.querySelector(
+          ".quick-chip.active[data-stage]"
+        );
+        const stage = stageEl ? stageEl.dataset.stage : "";
+        const advs = Array.from(
+          document.querySelectorAll(".quick-chip.active[data-adv]")
+        ).map((c) => c.dataset.adv);
+        // combine with text in quick-search
+        const text =
+          (document.getElementById("quick-search") || {}).value || "";
+        // if multiple advs selected, pick the first for now (renderProjectsFiltered supports single advantage)
+        const adv = advs.length ? advs[0] : "";
+        renderProjectsFiltered({
+          text: text.trim(),
+          stage: stage,
+          advantage: adv,
+        });
+      });
+    });
+  }
+
   // initial render
   renderProjects();
   renderProfile();

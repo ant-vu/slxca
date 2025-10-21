@@ -29,6 +29,23 @@
         <div class="header-search">
           <input id="quick-search" class="quick-search" type="search" placeholder="Search projects..." aria-label="Search projects" title="Search projects (filters list below)" />
         </div>
+        <div class="quick-chips" aria-hidden="false">
+          <div class="chip-group">
+            <strong class="small" style="margin-right:8px">Stage:</strong>
+            <button type="button" data-stage="Idea" class="chip quick-chip">Idea</button>
+            <button type="button" data-stage="Prototype" class="chip quick-chip">Prototype</button>
+            <button type="button" data-stage="Funded" class="chip quick-chip">Funded</button>
+            <button type="button" data-stage="Research" class="chip quick-chip">Research</button>
+          </div>
+          <div class="chip-group" style="margin-left:12px">
+            <strong class="small" style="margin-right:8px">Tags:</strong>
+            <button type="button" data-adv="Nuclear" class="chip quick-chip">Nuclear</button>
+            <button type="button" data-adv="Cheap Energy" class="chip quick-chip">Cheap Energy</button>
+            <button type="button" data-adv="Data Centres" class="chip quick-chip">Data Centres</button>
+            <button type="button" data-adv="AI / Compute" class="chip quick-chip">AI / Compute</button>
+            <button type="button" data-adv="Methane" class="chip quick-chip">Methane</button>
+          </div>
+        </div>
         <div class="header-actions">
           <button id="theme-toggle" class="btn" title="Toggle light / dark theme" aria-pressed="false">
             <span class="theme-icon" aria-hidden="true">
