@@ -387,10 +387,28 @@ function renderProjectsFiltered(opts) {
       if ((p.stage || "").toLowerCase() !== opts.stage.trim().toLowerCase())
         return false;
     }
-    if (opts.advantage && opts.advantage.trim()) {
-      const adv = opts.advantage.trim().toLowerCase();
-      if (!(p.advantages || []).map((a) => a.toLowerCase()).includes(adv))
-        return false;
+    // support single or multiple advantage filters
+    if (opts.advantage || opts.advantages) {
+      const advs = Array.isArray(opts.advantages)
+        ? opts.advantages.map((a) => (a || "").toLowerCase())
+        : opts.advantage && opts.advantage.trim()
+        ? [opts.advantage.trim().toLowerCase()]
+        : [];
+      if (advs.length) {
+        const projectAdvs = (p.advantages || []).map((a) =>
+          (a || "").toLowerCase()
+        );
+        const mode = opts.advMatchMode === "all" ? "all" : "any";
+        if (mode === "any") {
+          // at least one adv matches
+          const ok = advs.some((a) => projectAdvs.includes(a));
+          if (!ok) return false;
+        } else {
+          // all selected advs must be present on project
+          const ok = advs.every((a) => projectAdvs.includes(a));
+          if (!ok) return false;
+        }
+      }
     }
     if (opts.text && opts.text.trim()) {
       const t = opts.text.trim().toLowerCase();
@@ -1345,15 +1363,17 @@ function init() {
         const advs = Array.from(
           document.querySelectorAll(".quick-chip.active[data-adv]")
         ).map((c) => c.dataset.adv);
+        // get adv match mode
+        const advMatchMode =
+          (document.getElementById("adv-match-mode") || {}).value || "any";
         // combine with text in quick-search
         const text =
           (document.getElementById("quick-search") || {}).value || "";
-        // if multiple advs selected, pick the first for now (renderProjectsFiltered supports single advantage)
-        const adv = advs.length ? advs[0] : "";
         renderProjectsFiltered({
           text: text.trim(),
           stage: stage,
-          advantage: adv,
+          advantages: advs,
+          advMatchMode: advMatchMode,
         });
       });
     });

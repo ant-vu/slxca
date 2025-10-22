@@ -283,6 +283,18 @@ select {
   color: var(--panel);
   border-color: var(--accent);
 }
+/* adv match mode select */
+.adv-mode-select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--glass);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: inherit;
+}
+.adv-mode-select:focus {
+  outline: none;
+  box-shadow: 0 6px 18px rgba(55, 182, 167, 0.06);
+}
 @media (max-width: 700px) {
   .quick-chips {
     order: 4;
