@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SLXCA — New Page</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      // Apply saved theme early to avoid flash (same logic as index)
+      try {
+        const t = localStorage.getItem("slxca_theme");
+        if (t === "light" || t === "dark")
+          document.documentElement.setAttribute("data-theme", t);
+        else if (
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: light)").matches
+        )
+          document.documentElement.setAttribute("data-theme", "light");
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-row">
+        <div>
+          <h1>SLXCA</h1>
+          <p class="tag">
+            Connect Canadian academics and entrepreneurs to build strategic
+            industry projects.
+          </p>
+        </div>
+        <nav class="main-nav">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="projects.html" class="nav-link">Projects</a>
+          <a href="newpage.html" class="nav-link">New Page</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="panel">
+        <h2>New Page</h2>
+        <p class="small">
+          This is a new static page added to the site. It uses the same
+          stylesheet and theme toggling logic as the other pages.
+        </p>
+        <p>You can replace this content with your own. Helpful quick links:</p>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="projects.html">Projects</a></li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <small class="small">SLXCA — new page</small>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
