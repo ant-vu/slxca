@@ -3,6 +3,7 @@ const LS_KEYS = {
   PROJECTS: "canproj_projects",
   PROFILE: "canproj_profile",
   COURSES: "canproj_courses",
+  FILTERS: "canproj_filters",
 };
 
 // Utilities
@@ -87,9 +88,67 @@ function read(key) {
   } catch (e) {
     return null;
   }
+
+  // Restore persisted filter state (if any)
+  try {
+    const savedFilters = loadFiltersState() || {};
+    if (savedFilters) {
+      // restore search text
+      const qsEl = document.getElementById("quick-search");
+      if (qsEl && typeof savedFilters.text === "string")
+        qsEl.value = savedFilters.text;
+      // restore adv match mode
+      const modeEl = document.getElementById("adv-match-mode");
+      if (modeEl && savedFilters.advMatchMode)
+        modeEl.value = savedFilters.advMatchMode;
+      // clear existing chip actives
+      document
+        .querySelectorAll(".quick-chip.active")
+        .forEach((c) => c.classList.remove("active"));
+      // restore stage chip
+      if (savedFilters.stage) {
+        const stageChip = document.querySelector(
+          '.quick-chip[data-stage="' + savedFilters.stage + '"]'
+        );
+        if (stageChip) stageChip.classList.add("active");
+      }
+      // restore advantage chips
+      if (Array.isArray(savedFilters.advantages)) {
+        savedFilters.advantages.forEach((a) => {
+          const chip = document.querySelector(
+            '.quick-chip[data-adv="' + a + '"]'
+          );
+          if (chip) chip.classList.add("active");
+        });
+      }
+      // trigger initial filtered render using restored state
+      renderProjectsFiltered({
+        text: (savedFilters.text || "").trim(),
+        stage: savedFilters.stage || "",
+        advantages: savedFilters.advantages || [],
+        advMatchMode: savedFilters.advMatchMode || "any",
+      });
+    }
+  } catch (e) {
+    // ignore
+  }
 }
 function write(key, v) {
   localStorage.setItem(key, JSON.stringify(v));
+}
+
+// Persist/restore filters helper
+function saveFiltersState(state) {
+  try {
+    write(LS_KEYS.FILTERS, state || {});
+  } catch (e) {}
+}
+function loadFiltersState() {
+  try {
+    return read(LS_KEYS.FILTERS) || {};
+  } catch (e) {
+    return {};
+  }
 }
 
 // Projects (papers)
@@ -1333,7 +1392,27 @@ function init() {
     };
     const handler = debounce((ev) => {
       const v = (ev.target.value || "").trim();
-      renderProjectsFiltered({ text: v });
+      // determine current chip selections to persist with search text
+      const stageEl = document.querySelector(".quick-chip.active[data-stage]");
+      const stage = stageEl ? stageEl.dataset.stage : "";
+      const advs = Array.from(
+        document.querySelectorAll(".quick-chip.active[data-adv]")
+      ).map((c) => c.dataset.adv);
+      const advMatchMode =
+        (document.getElementById("adv-match-mode") || {}).value || "any";
+      renderProjectsFiltered({
+        text: v,
+        stage: stage,
+        advantages: advs,
+        advMatchMode: advMatchMode,
+      });
+      // persist UI filter state
+      saveFiltersState({
+        text: v,
+        stage: stage,
+        advantages: advs,
+        advMatchMode: advMatchMode,
+      });
     }, 180);
     qs.addEventListener("input", handler);
   }
@@ -1370,6 +1449,13 @@ function init() {
         const text =
           (document.getElementById("quick-search") || {}).value || "";
         renderProjectsFiltered({
+          text: text.trim(),
+          stage: stage,
+          advantages: advs,
+          advMatchMode: advMatchMode,
+        });
+        // persist UI filter state
+        saveFiltersState({
           text: text.trim(),
           stage: stage,
           advantages: advs,
