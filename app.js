@@ -1578,6 +1578,94 @@ function init() {
       URL.revokeObjectURL(url);
     };
   }
+  // Feed exports (JSON + RSS)
+  const exportFeedJson = document.getElementById("export-feed-json");
+  const exportFeedRss = document.getElementById("export-feed-rss");
+  function buildFeedItems(projects) {
+    return (projects || []).map((p) => ({
+      id: p.id || null,
+      title: p.title || "(untitled)",
+      authors: p.authors || "",
+      institution: p.institution || "",
+      abstract: p.abstract || "",
+      advantages: p.advantages || [],
+      stage: p.stage || "",
+      createdAt: p.createdAt || null,
+      updatedAt: p.updatedAt || null,
+      url:
+        (location.href.replace(/\/[^/]*$/, "/") || "") +
+        (p.id ? `#project-${p.id}` : ""),
+    }));
+  }
+  if (exportFeedJson) {
+    exportFeedJson.onclick = () => {
+      const projects = loadProjects();
+      const feed = {
+        version: "https://jsonfeed.org/version/1",
+        title: "SLXCA Projects Feed",
+        home_page_url: location.href.replace(/\/[^/]*$/, "/"),
+        feed_url: location.href.replace(/\/[^/]*$/, "/") + "feed.json",
+        items: buildFeedItems(projects),
+        generatedAt: new Date().toISOString(),
+      };
+      const blob = new Blob([JSON.stringify(feed, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `slxca-feed-${new Date().toISOString()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+  }
+  if (exportFeedRss) {
+    exportFeedRss.onclick = () => {
+      const projects = loadProjects();
+      const items = buildFeedItems(projects);
+      const feedTitle = "SLXCA Projects Feed";
+      const home = location.href.replace(/\/[^/]*$/, "/");
+      const feedUpdated =
+        (projects[0] && (projects[0].updatedAt || projects[0].createdAt)) ||
+        new Date().toISOString();
+      const xmlItems = items
+        .map((it) => {
+          const pubDate =
+            it.updatedAt || it.createdAt || new Date().toISOString();
+          return `<item>
+  <title><![CDATA[${it.title}]]></title>
+  <link>${escapeHtml(home)}</link>
+  <guid isPermaLink="false">${it.id || ""}</guid>
+  <description><![CDATA[${it.authors ? it.authors + " — " : ""}${
+            it.abstract
+          }]]></description>
+  <category>${(it.advantages || [])
+    .map((a) => escapeHtml(a))
+    .join(", ")}</category>
+  <pubDate>${new Date(pubDate).toUTCString()}</pubDate>
+</item>`;
+        })
+        .join("\n");
+      const rss = `<?xml version="1.0" encoding="UTF-8" ?>\n<rss version="2.0">\n<channel>\n  <title>${escapeHtml(
+        feedTitle
+      )}</title>\n  <link>${escapeHtml(
+        home
+      )}</link>\n  <description>Recent projects from SLXCA</description>\n  <lastBuildDate>${new Date(
+        feedUpdated
+      ).toUTCString()}</lastBuildDate>\n${xmlItems}\n</channel>\n</rss>`;
+      const blob = new Blob([rss], { type: "application/rss+xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `slxca-feed-${new Date().toISOString()}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+  }
   if (importBtn && importFile) {
     importBtn.onclick = () => importFile.click();
     importFile.onchange = (ev) => {
