@@ -50,6 +50,37 @@
           <li><a href="projects.html">Projects</a></li>
         </ul>
       </section>
+
+      <section class="panel" id="minigame-section">
+        <h2>Tag Match Minigame</h2>
+        <p class="small">
+          Quick 30s game: match the shown strategic advantage by clicking the
+          correct tag. Score points for each correct match. High score is saved
+          locally.
+        </p>
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+          "
+        >
+          <div><strong>Target:</strong> <span id="mg-target">—</span></div>
+          <div><strong>Score:</strong> <span id="mg-score">0</span></div>
+          <div><strong>Time:</strong> <span id="mg-timer">30</span>s</div>
+          <div><strong>High:</strong> <span id="mg-high">—</span></div>
+        </div>
+        <div
+          id="mg-buttons"
+          style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px"
+        ></div>
+        <div class="form-row">
+          <button id="mg-start" class="btn primary">Start Game (30s)</button>
+          <button id="mg-reset" class="btn">Reset High Score</button>
+        </div>
+      </section>
     </main>
 
     <footer class="site-footer">

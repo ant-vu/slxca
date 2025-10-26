@@ -1931,3 +1931,165 @@ window._canapp = {
 };
 
 init();
+
+// --- Minigame: Tag Match (simple client-side 30s game) ---
+(() => {
+  const MG_KEY_HIGH = "canapp_minigame_highscore";
+  // derive tag list from demo projects if available, fallback to static set
+  function getAllTags() {
+    try {
+      const fromDemo = Array.isArray(DEMO_PROJECTS)
+        ? DEMO_PROJECTS.flatMap((p) => p.advantages || [])
+        : [];
+      const uniq = Array.from(new Set(fromDemo.filter(Boolean)));
+      if (uniq.length) return uniq;
+    } catch (e) {}
+    return [
+      "Nuclear",
+      "Cheap Energy",
+      "Data Centres",
+      "AI / Compute",
+      "Methane",
+      "Land & Lumber",
+      "Resources",
+    ];
+  }
+
+  const state = {
+    running: false,
+    score: 0,
+    timeLeft: 30,
+    timerId: null,
+    tags: getAllTags(),
+    currentTarget: null,
+  };
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function renderHigh() {
+    const hs = localStorage.getItem(MG_KEY_HIGH);
+    $("mg-high").textContent = hs ? hs : "—";
+  }
+
+  function pickTarget() {
+    const t = state.tags[Math.floor(Math.random() * state.tags.length)];
+    state.currentTarget = t;
+    const el = $("mg-target");
+    if (el) el.textContent = t || "—";
+  }
+
+  function renderButtons() {
+    const container = $("mg-buttons");
+    if (!container) return;
+    container.innerHTML = "";
+    // build 5 buttons (1 correct + 4 random)
+    const pool = state.tags.slice();
+    // ensure target is present
+    if (!pool.includes(state.currentTarget)) pool.push(state.currentTarget);
+    // shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const choices = pool.slice(0, Math.min(5, pool.length));
+    // ensure target in choices
+    if (!choices.includes(state.currentTarget)) {
+      choices[Math.floor(Math.random() * choices.length)] = state.currentTarget;
+    }
+    choices.forEach((c) => {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = c;
+      b.onclick = () => onChoice(c);
+      container.appendChild(b);
+    });
+  }
+
+  function onChoice(choice) {
+    if (!state.running) return;
+    if (choice === state.currentTarget) {
+      state.score += 1;
+      showToast("Correct +1", 900);
+    } else {
+      state.score = Math.max(0, state.score - 1);
+      showToast("Wrong −1", 900);
+    }
+    const sc = $("mg-score");
+    if (sc) sc.textContent = state.score;
+    // next round
+    pickTarget();
+    renderButtons();
+  }
+
+  function tick() {
+    state.timeLeft -= 1;
+    const tEl = $("mg-timer");
+    if (tEl) tEl.textContent = state.timeLeft;
+    if (state.timeLeft <= 0) {
+      endGame();
+    }
+  }
+
+  function startGame() {
+    if (state.running) return;
+    state.running = true;
+    state.score = 0;
+    state.timeLeft = 30;
+    const sc = $("mg-score");
+    if (sc) sc.textContent = state.score;
+    const tEl = $("mg-timer");
+    if (tEl) tEl.textContent = state.timeLeft;
+    pickTarget();
+    renderButtons();
+    state.timerId = setInterval(tick, 1000);
+    showToast("Game started — go!", 1200);
+  }
+
+  function endGame() {
+    state.running = false;
+    if (state.timerId) clearInterval(state.timerId);
+    state.timerId = null;
+    showToast("Time up! Score: " + state.score, 2200);
+    // persist high score
+    try {
+      const prev = parseInt(localStorage.getItem(MG_KEY_HIGH) || "0", 10) || 0;
+      if (state.score > prev) {
+        localStorage.setItem(MG_KEY_HIGH, String(state.score));
+        renderHigh();
+        showToast("New high score! " + state.score, 2000);
+      }
+    } catch (e) {}
+  }
+
+  function resetHigh() {
+    try {
+      localStorage.removeItem(MG_KEY_HIGH);
+      renderHigh();
+      showToast("High score cleared");
+    } catch (e) {}
+  }
+
+  // wire up UI when present
+  document.addEventListener("DOMContentLoaded", () => {
+    // only initialize if minigame UI exists
+    if (!document.getElementById("minigame-section")) return;
+    // try to populate tags from existing advantage chips on pages (if present)
+    try {
+      const chips = Array.from(document.querySelectorAll(".chip"))
+        .map((c) => c.textContent.trim())
+        .filter(Boolean);
+      if (chips.length)
+        state.tags = Array.from(new Set(chips.concat(state.tags)));
+    } catch (e) {}
+    renderHigh();
+    const start = document.getElementById("mg-start");
+    if (start) start.onclick = startGame;
+    const reset = document.getElementById("mg-reset");
+    if (reset) reset.onclick = resetHigh;
+    // ensure initial target and buttons ready
+    pickTarget();
+    renderButtons();
+  });
+})();
