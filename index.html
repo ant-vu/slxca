@@ -25,6 +25,7 @@
         <nav class="main-nav">
           <a href="index.html" class="nav-link">Home</a>
           <a href="projects.html" class="nav-link">Projects</a>
+          <a href="newpage.html" class="nav-link">Minigame</a>
         </nav>
         <div class="header-search">
           <input id="quick-search" class="quick-search" type="search" placeholder="Search projects..." aria-label="Search projects" title="Search projects (filters list below)" />
@@ -85,6 +86,10 @@
           <button id="export-feed-rss" class="btn" title="Download RSS feed of projects">Feed (RSS)</button>
           <button id="import-data" class="btn" title="Import local data from JSON">Import Data</button>
           <input id="import-file" type="file" accept="application/json" style="display:none" />
+          <!-- Quick-launch minigame button (shows local high score) -->
+          <button id="mg-quick-toggle" class="btn" title="Quick-launch Tag Match (open modal)">
+            Game <span id="mg-quick-badge" class="shortcut-badge" aria-hidden="true">—</span>
+          </button>
         </div>
       </div>
     </header>
@@ -270,6 +275,24 @@
     <footer class="site-footer">
       <button id="seed-demo" class="btn seed-btn">Seed demo data</button>
     </footer>
+    <!-- Minigame modal (quick-launch) -->
+    <div id="mg-modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-card">
+        <h3>Tag Match Minigame</h3>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+          <div><strong>Target:</strong> <span id="mg-target">—</span></div>
+          <div><strong>Score:</strong> <span id="mg-score">0</span></div>
+          <div><strong>Time:</strong> <span id="mg-timer">30</span>s</div>
+          <div><strong>High:</strong> <span id="mg-high">—</span></div>
+        </div>
+        <div id="mg-buttons" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+          <button id="mg-start-modal" class="btn primary">Start Game (30s)</button>
+          <button id="mg-reset-modal" class="btn">Reset High Score</button>
+          <button id="mg-close" class="btn">Close</button>
+        </div>
+      </div>
+    </div>
     <div id="how-modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="how-modal-title" aria-describedby="how-modal-desc">
       <div class="modal-card">
   <h3 id="how-modal-title">How trait normalization works</h3>
