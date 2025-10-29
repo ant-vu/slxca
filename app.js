@@ -249,6 +249,28 @@ function joinProject(projectId, profile) {
   return true;
 }
 
+// owner-facing helper: remove a joiner (by email) from a project
+function removeJoiner(projectId, email) {
+  if (!confirm("Remove this joiner from project?")) return false;
+  const ps = loadProjects();
+  const p = ps.find((x) => x.id === projectId);
+  if (!p) return false;
+  p.joiners = (p.joiners || []).filter((j) => j.email !== email);
+  write(LS_KEYS.PROJECTS, ps);
+  renderProjects();
+  // if project details modal for this project is open, refresh it
+  const existingModal = document.querySelector(".canapp-project-modal");
+  if (existingModal && existingModal.getAttribute("data-project-id") === projectId) {
+    try {
+      const updated = ps.find((x) => x.id === projectId);
+      document.body.removeChild(existingModal);
+      showProjectDetails(updated);
+    } catch (e) {}
+  }
+  showToast("Joiner removed");
+  return true;
+}
+
 // Profile
 function loadProfile() {
   let pf = read(LS_KEYS.PROFILE);
@@ -661,6 +683,8 @@ function seedDemo(force) {
 
 function showProjectDetails(p) {
   const modal = document.createElement("div");
+  modal.className = "canapp-project-modal";
+  modal.setAttribute("data-project-id", p.id || "");
   modal.style.position = "fixed";
   modal.style.zIndex = 9999;
   modal.style.left = 0;
@@ -709,9 +733,7 @@ function showProjectDetails(p) {
       )}</div>`;
     }
   }
-  detailsHtml += `<div style="margin-top:12px" class="small">Joiners: ${
-    (p.joiners || []).map((j) => j.name).join(", ") || "—"
-  }</div>`;
+  detailsHtml += `<div style="margin-top:12px" class="small">Joiners: —</div>`;
   if (p.createdAt || p.updatedAt) {
     detailsHtml += `<div class="small" style="margin-top:8px">${
       p.createdAt ? "Created: " + formatDate(p.createdAt) : ""
@@ -722,6 +744,48 @@ function showProjectDetails(p) {
     }</div>`;
   }
   card.innerHTML = detailsHtml;
+
+  // Render joiners as interactive list (owners can remove)
+  const pf = loadProfile();
+  const joinersWrap = document.createElement("div");
+  joinersWrap.className = "small";
+  joinersWrap.style.marginTop = "12px";
+  if ((p.joiners || []).length === 0) {
+    joinersWrap.textContent = "Joiners: —";
+  } else {
+    const title = document.createElement("div");
+    title.textContent = "Joiners:";
+    joinersWrap.appendChild(title);
+    const list = document.createElement("div");
+    list.style.display = "flex";
+    list.style.flexDirection = "column";
+    list.style.gap = "6px";
+    (p.joiners || []).forEach((j) => {
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.justifyContent = "space-between";
+      row.style.alignItems = "center";
+      row.style.gap = "8px";
+      const label = document.createElement("div");
+      label.textContent = j.name || j.email || "—";
+      row.appendChild(label);
+      // if viewer is the owner, show remove button
+      if (pf && pf.email && p.ownerEmail && pf.email === p.ownerEmail) {
+        const rem = document.createElement("button");
+        rem.className = "btn";
+        rem.textContent = "Remove";
+        rem.onclick = () => {
+          if (!confirm("Remove " + (j.name || j.email) + " from joiners?")) return;
+          removeJoiner(p.id, j.email);
+        };
+        row.appendChild(rem);
+      }
+      list.appendChild(row);
+    });
+    joinersWrap.appendChild(list);
+  }
+  card.appendChild(joinersWrap);
+
   const close = document.createElement("button");
   close.className = "btn";
   close.textContent = "Close";
@@ -1928,6 +1992,7 @@ window._canapp = {
   loadCourses,
   seedDemo,
   renderProjectsFiltered,
+  removeJoiner,
 };
 
 init();
