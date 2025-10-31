@@ -1,5 +1,17 @@
 const { test, expect } = require("@playwright/test");
 
+// Ensure tests run with isolated state: clear localStorage before and after each test
+test.beforeEach(async ({ page }) => {
+  await page.goto("/index.html");
+  // clear any persisted state and reload
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.waitForFunction(() => !!window._canapp);
+});
+test.afterEach(async ({ page }) => {
+  await page.evaluate(() => localStorage.clear());
+});
+
 test("smoke: seed, profile, join, stage filter", async ({ page }) => {
   // open the app index
   await page.goto("/index.html");
