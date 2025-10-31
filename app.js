@@ -88,8 +88,14 @@ function read(key) {
   } catch (e) {
     return null;
   }
-
-  // Restore persisted filter state (if any)
+}
+/**
+ * Restore any persisted UI filter state from localStorage into the page.
+ * This was previously embedded (accidentally) inside `read()` and thus
+ * was unreachable. Extracting it here clarifies intent and allows
+ * initialization to explicitly call the restore step.
+ */
+function restoreFiltersFromStorage() {
   try {
     const savedFilters = loadFiltersState() || {};
     if (savedFilters) {
@@ -130,7 +136,7 @@ function read(key) {
       });
     }
   } catch (e) {
-    // ignore
+    // ignore any restore errors — do not block normal startup
   }
 }
 function write(key, v) {
@@ -260,7 +266,10 @@ function removeJoiner(projectId, email) {
   renderProjects();
   // if project details modal for this project is open, refresh it
   const existingModal = document.querySelector(".canapp-project-modal");
-  if (existingModal && existingModal.getAttribute("data-project-id") === projectId) {
+  if (
+    existingModal &&
+    existingModal.getAttribute("data-project-id") === projectId
+  ) {
     try {
       const updated = ps.find((x) => x.id === projectId);
       document.body.removeChild(existingModal);
@@ -775,7 +784,8 @@ function showProjectDetails(p) {
         rem.className = "btn";
         rem.textContent = "Remove";
         rem.onclick = () => {
-          if (!confirm("Remove " + (j.name || j.email) + " from joiners?")) return;
+          if (!confirm("Remove " + (j.name || j.email) + " from joiners?"))
+            return;
           removeJoiner(p.id, j.email);
         };
         row.appendChild(rem);
@@ -1530,6 +1540,8 @@ function init() {
   }
 
   // initial render
+  // restore any saved UI filter state (search text, chips, match mode)
+  restoreFiltersFromStorage();
   renderProjects();
   renderProfile();
   renderCourses();
