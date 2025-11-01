@@ -82,6 +82,12 @@ const DEMO_PROJECTS = [
   },
 ];
 
+/**
+ * Read a JSON value from localStorage by key.
+ * Returns the parsed value or null on error / missing key.
+ * @param {string} key
+ * @returns {any|null}
+ */
 function read(key) {
   try {
     return JSON.parse(localStorage.getItem(key)) || null;
@@ -139,33 +145,16 @@ function restoreFiltersFromStorage() {
     // ignore any restore errors — do not block normal startup
   }
 }
-function write(key, v) {
-  localStorage.setItem(key, JSON.stringify(v));
-}
+/**
+ * Write a value to localStorage as JSON.
+ * This is a small wrapper to centralize JSON serialization.
+ * @param {string} key
+ * @param {any} v
 
-// Persist/restore filters helper
-function saveFiltersState(state) {
-  try {
-    write(LS_KEYS.FILTERS, state || {});
-  } catch (e) {}
-}
-function loadFiltersState() {
-  try {
-    return read(LS_KEYS.FILTERS) || {};
-  } catch (e) {
-    return {};
-  }
-}
-
-// Projects (papers)
-function loadProjects() {
-  let p = read(LS_KEYS.PROJECTS);
-  if (!p) {
-    p = [];
-    write(LS_KEYS.PROJECTS, p);
-  }
-  return p;
-}
+ * - If no id exists, a new id and timestamps are created.
+ * After saving, the UI is re-rendered.
+ * @param {Object} proj
+ */
 function saveProject(proj) {
   const ps = loadProjects();
   if (proj.id) {
@@ -201,6 +190,10 @@ function saveProject(proj) {
   renderProjects();
 }
 
+/**
+ * Delete a project by id (with a confirmation prompt).
+ * @param {string} id
+ */
 function deleteProject(id) {
   if (!confirm("Delete this project? This cannot be undone.")) return;
   const ps = loadProjects();
@@ -209,6 +202,11 @@ function deleteProject(id) {
   renderProjects();
 }
 
+/**
+ * Prefill the project edit form for the project with the provided id.
+ * Scrolls to top and reveals the cancel edit control.
+ * @param {string} id
+ */
 function editProject(id) {
   const ps = loadProjects();
   const p = ps.find((x) => x.id === id);
@@ -243,6 +241,14 @@ function editProject(id) {
   // scroll to top so user sees the form
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+/**
+ * Add a joiner (profile) to a project. Returns true if the profile
+ * was added (or was already present).
+ * Persists the change and triggers a UI refresh.
+ * @param {string} projectId
+ * @param {Object} profile - { name, email, ... }
+ * @returns {boolean}
+ */
 function joinProject(projectId, profile) {
   const ps = loadProjects();
   const p = ps.find((x) => x.id === projectId);
@@ -256,6 +262,13 @@ function joinProject(projectId, profile) {
 }
 
 // owner-facing helper: remove a joiner (by email) from a project
+/**
+ * Owner-facing helper: remove a joiner (by email) from a project.
+ * Prompts for confirmation, persists change, refreshes UI and any open modal.
+ * @param {string} projectId
+ * @param {string} email
+ * @returns {boolean}
+ */
 function removeJoiner(projectId, email) {
   if (!confirm("Remove this joiner from project?")) return false;
   const ps = loadProjects();
@@ -281,6 +294,11 @@ function removeJoiner(projectId, email) {
 }
 
 // Profile
+/**
+ * Load the saved user profile from localStorage.
+ * Returns null when no profile exists.
+ * @returns {Object|null}
+ */
 function loadProfile() {
   let pf = read(LS_KEYS.PROFILE);
   if (!pf) {
@@ -288,16 +306,29 @@ function loadProfile() {
   }
   return pf;
 }
+
+/**
+ * Persist the user's profile and refresh profile UI.
+ * @param {Object} pf
+ */
 function saveProfile(pf) {
   write(LS_KEYS.PROFILE, pf);
   renderProfile();
 }
+
+/**
+ * Clear the saved profile and update the UI.
+ */
 function clearProfile() {
   localStorage.removeItem(LS_KEYS.PROFILE);
   renderProfile();
 }
 
 // Courses
+/**
+ * Load persisted courses list (seeds sample courses on first run).
+ * @returns {Array<Object>}
+ */
 function loadCourses() {
   let c = read(LS_KEYS.COURSES);
   if (!c) {
@@ -306,6 +337,12 @@ function loadCourses() {
   }
   return c;
 }
+
+/**
+ * Enroll the current profile in a course by id. Requires a saved profile.
+ * Provides simple UX alerts on success/failure and persists the profile.
+ * @param {string} id
+ */
 function enrollCourse(id) {
   const c = loadCourses();
   const course = c.find((x) => x.id === id);
@@ -325,6 +362,55 @@ function enrollCourse(id) {
 function renderProjects() {
   // Delegate to filtered renderer with empty filter (renders all)
   renderProjectsFiltered({});
+}
+
+/**
+ * Render the personality questionnaire UI based on the QUESTIONS constant.
+ * This function will pre-fill any answers stored in the user's profile.
+ */
+function renderPersonalityQuestions() {
+  const container = $("#questions");
+  if (!container) return;
+  container.innerHTML = "";
+  const pf = loadProfile();
+  QUESTIONS.forEach((q) => {
+    const div = document.createElement("div");
+    div.className = "question";
+    const t = document.createElement("div");
+    t.className = "qtext";
+    t.textContent = q.text;
+    div.appendChild(t);
+    const likert = document.createElement("div");
+    likert.className = "likert";
+    for (let i = 1; i <= 5; i++) {
+      const id = q.id + "_" + i;
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = q.id;
+      input.value = i;
+      input.id = id;
+      const span = document.createElement("span");
+      span.textContent = i;
+      label.appendChild(input);
+      label.appendChild(span);
+      likert.appendChild(label);
+    }
+    div.appendChild(likert);
+    container.appendChild(div);
+  });
+  // pre-fill if profile has per-question answers saved
+  if (pf && pf.personalityAnswers) {
+    QUESTIONS.forEach((q) => {
+      const val = pf.personalityAnswers[q.id];
+      if (val) {
+        const el = document.querySelector(
+          'input[name="' + q.id + '"][value="' + val + '"]'
+        );
+        if (el) el.checked = true;
+      }
+    });
+  }
 }
 
 // Personality test questions (map to trait axes)
@@ -437,6 +523,13 @@ function renderPersonalityQuestions() {
   }
 }
 
+/**
+ * Collect personality questionnaire answers from the DOM, aggregate
+ * them by trait, and return both raw per-question answers and
+ * per-trait averages (and normalized 0..1 values).
+ * Returns null when no answers were provided.
+ * @returns {{answersByQ: Object, traitAverages: Object, traitNormalized: Object}|null}
+ */
 function collectPersonalityAnswers() {
   // collect per-question answers and aggregate per-trait
   const answersByQ = {};
@@ -466,6 +559,15 @@ function collectPersonalityAnswers() {
   return { answersByQ, traitAverages, traitNormalized };
 }
 
+/**
+ * Render the list of projects using optional filters.
+ * Supported filter options:
+ *  - text: string search across title/abstract/authors/institution/stage
+ *  - stage: stage string (exact)
+ *  - advantage / advantages: string or array of advantage tags
+ *  - advMatchMode: 'any' | 'all'
+ * @param {Object} opts
+ */
 function renderProjectsFiltered(opts) {
   opts = opts || {};
   const list = $("#projects-list");
@@ -662,7 +764,12 @@ function renderProjectsFiltered(opts) {
   });
 }
 
-// Seed demo data (writes projects, courses, and roles if requested)
+/**
+ * Seed demo data into localStorage.
+ * If `force` is true, overwrite existing data without prompting.
+ * Used by tests and the demo seed UI.
+ * @param {boolean} force
+ */
 function seedDemo(force) {
   if (!force && (loadProjects().length || loadCourses().length)) {
     if (!confirm("Local data exists. Overwrite with demo seed?")) return;
@@ -690,6 +797,12 @@ function seedDemo(force) {
   alert("Demo data seeded (localStorage).");
 }
 
+/**
+ * Show a modal with full project details.
+ * Renders trait radars (overlay with user traits when available), joiners,
+ * timestamps, and owner controls where applicable.
+ * @param {Object} p
+ */
 function showProjectDetails(p) {
   const modal = document.createElement("div");
   modal.className = "canapp-project-modal";
@@ -805,6 +918,10 @@ function showProjectDetails(p) {
   document.body.appendChild(modal);
 }
 
+/**
+ * Render profile form values and matching / trait summaries for the saved profile.
+ * If no profile exists, clears the form and shows placeholder UI.
+ */
 function renderProfile() {
   const pf = loadProfile();
   if (!pf) {
@@ -825,6 +942,11 @@ function renderProfile() {
   renderTraitRadar(pf);
 }
 
+/**
+ * Render a compact radar visualization for the given profile's normalized traits.
+ * Expects `pf.traitNormalized` or `pf.traits` (1..5) to be present.
+ * @param {Object} pf
+ */
 function renderTraitRadar(pf) {
   const container = $("#trait-radar");
   if (!container) return;
@@ -898,7 +1020,14 @@ function renderTraitRadar(pf) {
   container.innerHTML = svg;
 }
 
-// build a radar SVG string from normalized trait values (0..1)
+/**
+ * Build a radar SVG string from normalized trait values (0..1).
+ * Returns an inline SVG string suitable for insertion into the DOM.
+ * @param {Object} normalized - map of trait -> 0..1
+ * @param {number} [size=160]
+ * @param {boolean} [showLabels=false]
+ * @returns {string}
+ */
 function buildRadarSvg(normalized, size = 160, showLabels = false) {
   const order = [
     "drive",
@@ -979,7 +1108,14 @@ function buildRadarSvg(normalized, size = 160, showLabels = false) {
   `;
 }
 
-// build an overlay radar: user polygon (green) and project polygon (orange)
+/**
+ * Build an overlay radar SVG that shows user and project polygons.
+ * Useful for visual trait comparisons.
+ * @param {Object} userNorm - normalized user traits
+ * @param {Object} projNorm - normalized project traits
+ * @param {number} [size=200]
+ * @returns {string}
+ */
 function buildOverlayRadarSvg(userNorm, projNorm, size = 200) {
   const order = [
     "drive",
@@ -1067,6 +1203,11 @@ function buildOverlayRadarSvg(userNorm, projNorm, size = 200) {
   `;
 }
 
+/**
+ * Render a simple trait summary bar chart for the given profile.
+ * Accepts either `pf.traitNormalized` (0..1) or `pf.traits` (1..5).
+ * @param {Object} pf
+ */
 function renderTraitSummary(pf) {
   const container = $("#trait-summary");
   if (!container) return;
@@ -1123,6 +1264,10 @@ function renderTraitSummary(pf) {
 }
 
 // Simple matching: score projects by #matching keywords between project advantages+title+abstract and user skills/role
+/**
+ * Render the top project matches for the saved profile.
+ * Uses scoreMatch() to compute a numeric score per project.
+ */
 function renderMatches() {
   const pf = loadProfile();
   const output = $("#matching-result");
@@ -1156,6 +1301,14 @@ function renderMatches() {
   });
 }
 
+/**
+ * Compute a heuristic numeric score for how well profile `pf` matches project `p`.
+ * This combines simple keyword matching, role/institution signals, and
+ * an approximate trait-distance heuristic when trait data exists.
+ * @param {Object} p
+ * @param {Object} pf
+ * @returns {number}
+ */
 function scoreMatch(p, pf) {
   let score = 0;
   const text = (
@@ -1250,6 +1403,9 @@ function scoreMatch(p, pf) {
 }
 
 // Courses
+/**
+ * Render the courses list and wire the enroll buttons.
+ */
 function renderCourses() {
   const list = $("#courses-list");
   const courses = loadCourses();
@@ -1272,6 +1428,12 @@ function renderCourses() {
 }
 
 // Helpers & event wiring
+/**
+ * Escape user-provided text for safe insertion into HTML fragments.
+ * Simple replacement for <, > and &.
+ * @param {string} s
+ * @returns {string}
+ */
 function escapeHtml(s) {
   if (!s) return "";
   return s
@@ -1280,6 +1442,12 @@ function escapeHtml(s) {
     .replaceAll(">", "&gt;");
 }
 
+/**
+ * Format an ISO timestamp into a localized human-friendly string.
+ * Falls back to the raw input on error.
+ * @param {string} iso
+ * @returns {string}
+ */
 function formatDate(iso) {
   if (!iso) return "";
   try {
@@ -1290,6 +1458,11 @@ function formatDate(iso) {
   }
 }
 
+/**
+ * Initialize the app UI: wire form handlers, chips, theme toggle,
+ * import/export, quick-search, and perform the initial render.
+ * This is invoked at the bottom of the file on module load.
+ */
 function init() {
   // setup chips
   $$("#advantage-chips .chip").forEach((ch) => {
