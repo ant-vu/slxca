@@ -124,6 +124,11 @@ function restoreFiltersFromStorage() {
         );
         if (stageChip) stageChip.classList.add("active");
       }
+      // restore favorites chip
+      if (savedFilters.favorites) {
+        const favChip = document.querySelector(".quick-chip[data-fav]");
+        if (favChip) favChip.classList.add("active");
+      }
       // restore advantage chips
       if (Array.isArray(savedFilters.advantages)) {
         savedFilters.advantages.forEach((a) => {
@@ -139,6 +144,7 @@ function restoreFiltersFromStorage() {
         stage: savedFilters.stage || "",
         advantages: savedFilters.advantages || [],
         advMatchMode: savedFilters.advMatchMode || "any",
+        favorites: !!savedFilters.favorites,
       });
     }
   } catch (e) {
@@ -166,6 +172,9 @@ function saveProject(proj) {
       // preserve owner info if not provided
       proj.ownerEmail = proj.ownerEmail || ps[idx].ownerEmail;
       proj.ownerName = proj.ownerName || ps[idx].ownerName;
+      // preserve favorite flag when editing if not provided in form
+      if (typeof proj.favorite === "undefined")
+        proj.favorite = ps[idx].favorite;
       ps[idx] = proj;
     } else {
       ps.unshift(proj);
@@ -575,6 +584,10 @@ function renderProjectsFiltered(opts) {
   list.innerHTML = "";
   const projects = loadProjects();
   const filtered = projects.filter((p) => {
+    // favorites filter (boolean flag)
+    if (opts.favorites || opts.favoritesOnly) {
+      if (!p.favorite) return false;
+    }
     if (opts.stage && opts.stage.trim()) {
       if ((p.stage || "").toLowerCase() !== opts.stage.trim().toLowerCase())
         return false;
@@ -702,6 +715,18 @@ function renderProjectsFiltered(opts) {
     };
     actions.appendChild(joinBtn);
     actions.appendChild(viewBtn);
+    // favorite / bookmark button
+    const favBtn = document.createElement("button");
+    favBtn.className = "btn";
+    favBtn.setAttribute(
+      "aria-label",
+      p.favorite ? "Unfavorite project" : "Favorite project"
+    );
+    favBtn.textContent = p.favorite ? "★ Favorite" : "☆ Favorite";
+    favBtn.onclick = () => {
+      toggleFavorite(p.id);
+    };
+    actions.appendChild(favBtn);
     // show edit/delete for owner
     const pf = loadProfile();
     if (pf && pf.email && p.ownerEmail && pf.email === p.ownerEmail) {
@@ -1459,6 +1484,26 @@ function formatDate(iso) {
 }
 
 /**
+ * Toggle favorite (bookmark) status for a project and persist it.
+ * @param {string} projectId
+ */
+function toggleFavorite(projectId) {
+  try {
+    const ps = loadProjects();
+    const idx = ps.findIndex((p) => p.id === projectId);
+    if (idx === -1) return;
+    ps[idx].favorite = !ps[idx].favorite;
+    write(LS_KEYS.PROJECTS, ps);
+    renderProjects();
+    showToast(
+      ps[idx].favorite ? "Added to Favorites" : "Removed from Favorites"
+    );
+  } catch (e) {
+    // ignore
+  }
+}
+
+/**
  * Initialize the app UI: wire form handlers, chips, theme toggle,
  * import/export, quick-search, and perform the initial render.
  * This is invoked at the bottom of the file on module load.
@@ -1645,6 +1690,8 @@ function init() {
       const advs = Array.from(
         document.querySelectorAll(".quick-chip.active[data-adv]")
       ).map((c) => c.dataset.adv);
+      const favEl = document.querySelector(".quick-chip.active[data-fav]");
+      const favorites = !!favEl;
       const advMatchMode =
         (document.getElementById("adv-match-mode") || {}).value || "any";
       renderProjectsFiltered({
@@ -1652,6 +1699,7 @@ function init() {
         stage: stage,
         advantages: advs,
         advMatchMode: advMatchMode,
+        favorites: favorites,
       });
       // persist UI filter state
       saveFiltersState({
@@ -1659,6 +1707,7 @@ function init() {
         stage: stage,
         advantages: advs,
         advMatchMode: advMatchMode,
+        favorites: favorites,
       });
     }, 180);
     qs.addEventListener("input", handler);
@@ -1689,6 +1738,9 @@ function init() {
         const advs = Array.from(
           document.querySelectorAll(".quick-chip.active[data-adv]")
         ).map((c) => c.dataset.adv);
+        const favChipActive = !!document.querySelector(
+          ".quick-chip.active[data-fav]"
+        );
         // get adv match mode
         const advMatchMode =
           (document.getElementById("adv-match-mode") || {}).value || "any";
@@ -1700,6 +1752,7 @@ function init() {
           stage: stage,
           advantages: advs,
           advMatchMode: advMatchMode,
+          favorites: favChipActive,
         });
         // persist UI filter state
         saveFiltersState({
@@ -1707,6 +1760,7 @@ function init() {
           stage: stage,
           advantages: advs,
           advMatchMode: advMatchMode,
+          favorites: favChipActive,
         });
       });
     });
