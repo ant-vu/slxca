@@ -707,3 +707,40 @@ footer.site-footer {
     transition: none !important;
   }
 }
+
+/* Favorite / bookmark icon button */
+.fav-btn {
+  padding: 6px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  transition: background 160ms ease, transform 120ms ease, color 160ms ease,
+    border-color 160ms ease;
+}
+.fav-btn .fav-icon {
+  display: inline-block;
+}
+.fav-btn:hover {
+  background: rgba(255, 255, 255, 0.02);
+  transform: translateY(-1px);
+}
+.fav-btn:focus {
+  outline: 2px solid rgba(55, 182, 167, 0.18);
+  outline-offset: 2px;
+}
+.fav-btn[aria-pressed="true"] {
+  color: #ffb74d; /* gold */
+  border-color: rgba(255, 183, 77, 0.9);
+  background: rgba(255, 183, 77, 0.06);
+}
+.fav-btn[aria-pressed="true"] .fav-icon {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}

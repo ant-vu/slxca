@@ -692,6 +692,7 @@ function renderProjectsFiltered(opts) {
       left.insertBefore(radarWrap, left.firstChild);
     }
     const actions = document.createElement("div");
+    actions.className = "actions";
     actions.style.display = "flex";
     actions.style.flexDirection = "column";
     actions.style.gap = "8px";
@@ -715,14 +716,19 @@ function renderProjectsFiltered(opts) {
     };
     actions.appendChild(joinBtn);
     actions.appendChild(viewBtn);
-    // favorite / bookmark button
+    // favorite / bookmark button (icon-only)
     const favBtn = document.createElement("button");
-    favBtn.className = "btn";
+    favBtn.className = "btn fav-btn";
+    favBtn.setAttribute("aria-pressed", p.favorite ? "true" : "false");
     favBtn.setAttribute(
-      "aria-label",
+      "title",
       p.favorite ? "Unfavorite project" : "Favorite project"
     );
-    favBtn.textContent = p.favorite ? "★ Favorite" : "☆ Favorite";
+    favBtn.innerHTML = `<span class="fav-icon" aria-hidden="true">${
+      p.favorite ? "★" : "☆"
+    }</span><span class="visually-hidden">${
+      p.favorite ? "Unfavorite project" : "Favorite project"
+    }</span>`;
     favBtn.onclick = () => {
       toggleFavorite(p.id);
     };
