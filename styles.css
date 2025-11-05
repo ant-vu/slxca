@@ -727,6 +727,9 @@ footer.site-footer {
 }
 .fav-btn .fav-icon {
   display: inline-block;
+  font-size: 18px;
+  line-height: 1;
+  pointer-events: none; /* icon itself shouldn't capture clicks */
 }
 .fav-btn:hover {
   background: rgba(255, 255, 255, 0.02);
