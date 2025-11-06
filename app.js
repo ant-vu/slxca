@@ -898,6 +898,44 @@ function showProjectDetails(p) {
   }
   card.innerHTML = detailsHtml;
 
+  // add favorite toggle button in modal header (next to title)
+  try {
+    const h2 = card.querySelector("h2");
+    if (h2) {
+      const favModalBtn = document.createElement("button");
+      favModalBtn.className = "btn fav-btn modal-fav";
+      const isFav = !!p.favorite;
+      favModalBtn.setAttribute("aria-pressed", isFav ? "true" : "false");
+      favModalBtn.setAttribute(
+        "title",
+        isFav ? "Unfavorite project" : "Favorite project"
+      );
+      favModalBtn.innerHTML = `<span class="fav-icon" aria-hidden="true">${
+        isFav ? "★" : "☆"
+      }</span><span class="visually-hidden">${
+        isFav ? "Unfavorite project" : "Favorite project"
+      }</span>`;
+      favModalBtn.style.marginLeft = "12px";
+      favModalBtn.onclick = () => {
+        // toggle persisted flag and update this button state to reflect current value
+        toggleFavorite(p.id);
+        try {
+          const updated = loadProjects().find((x) => x.id === p.id) || {};
+          const nowFav = !!updated.favorite;
+          favModalBtn.setAttribute("aria-pressed", nowFav ? "true" : "false");
+          favModalBtn.setAttribute(
+            "title",
+            nowFav ? "Unfavorite project" : "Favorite project"
+          );
+          const icon = favModalBtn.querySelector(".fav-icon");
+          if (icon) icon.textContent = nowFav ? "★" : "☆";
+        } catch (e) {}
+      };
+      // insert after the H2 so it appears inline with the title
+      h2.parentNode.insertBefore(favModalBtn, h2.nextSibling);
+    }
+  } catch (e) {}
+
   // Render joiners as interactive list (owners can remove)
   const pf = loadProfile();
   const joinersWrap = document.createElement("div");
