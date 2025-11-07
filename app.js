@@ -2280,6 +2280,24 @@ window._canapp = {
 
 init();
 
+// Back-to-top: show button when user scrolls down; smooth-scroll to top on click.
+document.addEventListener("DOMContentLoaded", () => {
+  const bt = document.getElementById("back-to-top");
+  if (!bt) return;
+  const onScroll = () => {
+    if (window.scrollY > 280) bt.classList.add("show");
+    else bt.classList.remove("show");
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  bt.addEventListener("click", (ev) => {
+    ev.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    bt.blur();
+  });
+  // init state in case page was loaded scrolled
+  onScroll();
+});
+
 // --- Minigame: Tag Match (simple client-side 30s game) ---
 (() => {
   const MG_KEY_HIGH = "canapp_minigame_highscore";
