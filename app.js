@@ -1601,6 +1601,19 @@ function init() {
     }
     if (Object.keys(traits).length) proj.traits = traits;
     saveProject(proj);
+    try {
+      // show a small confetti burst on successful submit (respecting reduced-motion)
+      if (
+        !(
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        )
+      ) {
+        const submitBtn = document.getElementById("submit-paper");
+        if (typeof showConfetti === "function")
+          showConfetti(submitBtn, { count: 36 });
+      }
+    } catch (e) {}
     $("#paper-form").reset();
     $$("#advantage-chips .chip").forEach((c) => c.classList.remove("active"));
     // clear edit state UI
@@ -2297,6 +2310,122 @@ document.addEventListener("DOMContentLoaded", () => {
   // init state in case page was loaded scrolled
   onScroll();
 });
+
+/*
+ * Lightweight confetti (no deps)
+ * showConfetti(originElement, {count, spread, duration})
+ */
+function showConfetti(originEl, opts) {
+  opts = opts || {};
+  if (
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  )
+    return;
+  const count = typeof opts.count === "number" ? opts.count : 40;
+  const spread = typeof opts.spread === "number" ? opts.spread : 60; // degrees
+  const duration = typeof opts.duration === "number" ? opts.duration : 1400;
+  const colors = [
+    "#ffb74d",
+    "#37b6a7",
+    "#4caf50",
+    "#90caf9",
+    "#ff8a65",
+    "#f48fb1",
+  ];
+
+  const canvas = document.createElement("canvas");
+  canvas.className = "confetti-canvas";
+  canvas.style.position = "fixed";
+  canvas.style.left = "0";
+  canvas.style.top = "0";
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  canvas.style.pointerEvents = "none";
+  canvas.style.zIndex = 99999;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  // origin point
+  let ox = window.innerWidth / 2;
+  let oy = window.innerHeight / 2;
+  try {
+    if (originEl && originEl.getBoundingClientRect) {
+      const r = originEl.getBoundingClientRect();
+      ox = r.left + r.width / 2;
+      oy = r.top + r.height / 2;
+    }
+  } catch (e) {}
+
+  const particles = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.random() * spread - spread / 2) * (Math.PI / 180);
+    const speed = Math.random() * 6 + 2;
+    particles.push({
+      x: ox,
+      y: oy,
+      vx: Math.cos(angle) * speed * (Math.random() * 0.8 + 0.6),
+      vy:
+        Math.sin(angle) * speed * (Math.random() * 0.8 + 0.6) -
+        (Math.random() * 4 + 2),
+      size: Math.random() * 8 + 6,
+      color: colors[(Math.random() * colors.length) | 0],
+      rot: Math.random() * 360,
+      vr: (Math.random() - 0.5) * 10,
+      ttl: duration,
+      age: 0,
+    });
+  }
+
+  let last = performance.now();
+  let raf;
+  function frame(now) {
+    const dt = now - last;
+    last = now;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.age += dt;
+      if (p.age >= p.ttl) continue;
+      alive = true;
+      // physics
+      p.vy += 0.003 * dt; // gravity-ish
+      p.x += p.vx * (dt / 16);
+      p.y += p.vy * (dt / 16);
+      p.vx *= 0.998;
+      p.vy *= 0.998;
+      p.rot += p.vr * (dt / 16);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rot * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      ctx.restore();
+    }
+    if (alive) raf = requestAnimationFrame(frame);
+    else cleanup();
+  }
+
+  function cleanup() {
+    if (raf) cancelAnimationFrame(raf);
+    window.removeEventListener("resize", resize);
+    try {
+      if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+    } catch (e) {}
+  }
+
+  raf = requestAnimationFrame(frame);
+  // ensure cleanup in case particles linger
+  setTimeout(cleanup, duration + 300);
+}
 
 // --- Minigame: Tag Match (simple client-side 30s game) ---
 (() => {
