@@ -2311,6 +2311,30 @@ document.addEventListener("DOMContentLoaded", () => {
   onScroll();
 });
 
+// Register service worker when available and in secure context (or localhost)
+try {
+  if (
+    "serviceWorker" in navigator &&
+    (location.protocol === "https:" ||
+      location.hostname === "localhost" ||
+      location.hostname === "127.0.0.1")
+  ) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          console.log("Service worker registered:", reg);
+          try {
+            showToast && showToast("Offline support enabled");
+          } catch (e) {}
+        })
+        .catch((err) => {
+          console.warn("Service worker registration failed:", err);
+        });
+    });
+  }
+} catch (e) {}
+
 /*
  * Lightweight confetti (no deps)
  * showConfetti(originElement, {count, spread, duration})
