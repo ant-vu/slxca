@@ -1,6 +1,11 @@
 // Simple service worker for caching static assets.
 // Note: service workers require HTTPS in production (localhost is allowed).
-const CACHE_NAME = "slxca-cache-v1";
+// derive cache name from URL query param `cacheVersion` if provided
+const urlParams =
+  typeof self !== "undefined" && self.location
+    ? new URL(self.location).searchParams
+    : new URL(location.href).searchParams;
+const CACHE_NAME = "slxca-cache-" + (urlParams.get("cacheVersion") || "v1");
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -26,8 +31,11 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
+        // remove any cache that doesn't match the current cache name prefix
         Promise.all(
-          keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+          keys
+            .filter((k) => k.indexOf("slxca-cache-") === 0 && k !== CACHE_NAME)
+            .map((k) => caches.delete(k))
         )
       )
       .then(() => self.clients.claim())

@@ -2320,8 +2320,20 @@ try {
       location.hostname === "127.0.0.1")
   ) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker
-        .register("/sw.js")
+      // try to derive a cache version from package.json to version caches automatically
+      fetch("/package.json")
+        .then((r) => r.json())
+        .then((pkg) => {
+          const ver =
+            pkg && pkg.version ? String(pkg.version) : String(Date.now());
+          return navigator.serviceWorker.register(
+            "/sw.js?cacheVersion=" + encodeURIComponent(ver)
+          );
+        })
+        .catch(() => {
+          // fallback: register without version param
+          return navigator.serviceWorker.register("/sw.js");
+        })
         .then((reg) => {
           console.log("Service worker registered:", reg);
           try {
