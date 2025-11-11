@@ -48,7 +48,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // navigation requests: try network, fallback to cached index.html
+  // navigation requests: try network-first, fallback to cached index.html
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
@@ -63,7 +63,21 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // For other requests use cache-first, then network-with-cache
+  // Decide which assets should use stale-while-revalidate:
+  // CSS/JS/images/fonts -> return cached immediately and update in background
+  const staticAssetRe =
+    /\.(?:css|js|png|jpg|jpeg|svg|gif|webp|woff2?|ttf|otf)$/i;
+  const shouldSWR =
+    staticAssetRe.test(url.pathname) ||
+    url.pathname.endsWith("/styles.css") ||
+    url.pathname.endsWith("/app.js");
+
+  if (shouldSWR) {
+    event.respondWith(staleWhileRevalidate(event.request));
+    return;
+  }
+
+  // Default: cache-first then network-with-cache
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
@@ -79,3 +93,33 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+/**
+ * Stale-While-Revalidate implementation: respond with cache immediately (if available),
+ * fetch from network in background and update cache for next time. If no cache, wait for network.
+ * @param {Request} request
+ */
+function staleWhileRevalidate(request) {
+  return caches.match(request).then((cached) => {
+    const networkFetch = fetch(request)
+      .then((resp) => {
+        if (resp && resp.status === 200) {
+          try {
+            const copy = resp.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(request, copy));
+          } catch (e) {}
+        }
+        return resp;
+      })
+      .catch(() => null);
+
+    // If we have a cached response, return it immediately and update cache in background
+    if (cached) {
+      networkFetch; // start background update
+      return cached;
+    }
+
+    // otherwise, fall back to network (may be null on failure)
+    return networkFetch;
+  });
+}
