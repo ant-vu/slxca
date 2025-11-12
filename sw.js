@@ -123,3 +123,13 @@ function staleWhileRevalidate(request) {
     return networkFetch;
   });
 }
+
+// Respond to messages from the page (e.g., skip waiting request)
+self.addEventListener("message", (event) => {
+  try {
+    if (!event.data) return;
+    if (event.data.type === "SKIP_WAITING") {
+      self.skipWaiting();
+    }
+  } catch (e) {}
+});

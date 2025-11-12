@@ -2339,6 +2339,8 @@ try {
           try {
             showToast && showToast("Offline support enabled");
           } catch (e) {}
+          // detect updates and notify the UI
+          if (reg) attachSWUpdateHandler(reg);
         })
         .catch((err) => {
           console.warn("Service worker registration failed:", err);
@@ -2346,6 +2348,68 @@ try {
     });
   }
 } catch (e) {}
+
+// Attach update handler to a ServiceWorkerRegistration to notify the page when a new worker is waiting
+function attachSWUpdateHandler(reg) {
+  try {
+    if (!reg) return;
+    // If there's already a waiting worker, show the banner
+    if (reg.waiting) {
+      showSWUpdateBanner(reg);
+      return;
+    }
+    // Listen for updates found
+    reg.addEventListener("updatefound", () => {
+      const newWorker = reg.installing;
+      if (!newWorker) return;
+      newWorker.addEventListener("statechange", () => {
+        if (newWorker.state === "installed") {
+          // A new worker is installed and waiting
+          if (reg.waiting) showSWUpdateBanner(reg);
+        }
+      });
+    });
+  } catch (e) {}
+}
+
+function showSWUpdateBanner(reg) {
+  const banner = document.getElementById("sw-update-banner");
+  if (!banner) return;
+  banner.style.display = "";
+  banner.classList.add("show");
+  const nowBtn = document.getElementById("sw-update-now");
+  const laterBtn = document.getElementById("sw-update-later");
+
+  function cleanup() {
+    banner.style.display = "none";
+    banner.classList.remove("show");
+    if (nowBtn) nowBtn.onclick = null;
+    if (laterBtn) laterBtn.onclick = null;
+  }
+
+  if (nowBtn) {
+    nowBtn.onclick = () => {
+      // tell the waiting worker to skipWaiting
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+    };
+  }
+  if (laterBtn) {
+    laterBtn.onclick = () => cleanup();
+  }
+
+  // Listen for controllerchange to reload the page when the new SW takes control
+  navigator.serviceWorker.addEventListener(
+    "controllerchange",
+    function onCtrl() {
+      try {
+        navigator.serviceWorker.removeEventListener("controllerchange", onCtrl);
+      } catch (e) {}
+      window.location.reload();
+    }
+  );
+}
 
 /*
  * Lightweight confetti (no deps)

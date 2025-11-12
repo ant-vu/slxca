@@ -811,3 +811,25 @@ footer.site-footer {
   outline: 2px solid rgba(55, 182, 167, 0.18);
   outline-offset: 2px;
 }
+
+/* Service worker update banner */
+.sw-update {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 24px;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(2, 6, 15, 0.45);
+  z-index: 10001;
+}
+.sw-update .sw-update-inner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.sw-update.show {
+  display: block;
+}

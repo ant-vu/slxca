@@ -351,6 +351,16 @@
     </script>
     <!-- Toast container for transient messages (keyboard shortcuts, status) -->
     <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
+    <!-- Update banner (hidden until new SW is waiting) -->
+    <div id="sw-update-banner" class="sw-update" role="status" aria-live="polite" style="display:none">
+      <div class="sw-update-inner">
+        <span id="sw-update-msg">A new version is available.</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="sw-update-now" class="btn primary">Update now</button>
+          <button id="sw-update-later" class="btn">Later</button>
+        </div>
+      </div>
+    </div>
     <!-- Back to top floating button -->
     <button id="back-to-top" class="btn back-to-top" title="Back to top" aria-label="Back to top">↑</button>
   </body>
