@@ -2386,25 +2386,97 @@ function showSWUpdateBanner(reg, incomingVersion) {
   banner.classList.add("show");
   const nowBtn = document.getElementById("sw-update-now");
   const laterBtn = document.getElementById("sw-update-later");
+  // Add a small countdown display inside the message (if not present)
+  let countdownSpan = document.getElementById("sw-update-countdown");
+  if (!countdownSpan && msg) {
+    countdownSpan = document.createElement("span");
+    countdownSpan.id = "sw-update-countdown";
+    countdownSpan.style.marginLeft = "8px";
+    countdownSpan.style.opacity = "0.9";
+    countdownSpan.style.fontWeight = "600";
+    msg.appendChild(document.createTextNode(" "));
+    msg.appendChild(countdownSpan);
+  }
+
+  let countdown = 10; // seconds before auto-apply
+  let intervalId = null;
+  let timeoutId = null;
+  let canceled = false;
 
   function cleanup() {
     banner.style.display = "none";
     banner.classList.remove("show");
     if (nowBtn) nowBtn.onclick = null;
     if (laterBtn) laterBtn.onclick = null;
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    if (countdownSpan) countdownSpan.textContent = "";
+  }
+
+  function startCountdown() {
+    canceled = false;
+    if (countdownSpan) countdownSpan.textContent = `Applying in ${countdown}s`;
+    intervalId = setInterval(() => {
+      countdown -= 1;
+      if (countdownSpan)
+        countdownSpan.textContent = `Applying in ${countdown}s`;
+      if (countdown <= 0) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    }, 1000);
+    timeoutId = setTimeout(() => {
+      // if user canceled or there's no waiting worker, abort
+      if (canceled) return cleanup();
+      if (reg && reg.waiting) {
+        try {
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          try {
+            showToast && showToast("Applying update...");
+          } catch (e) {}
+        } catch (e) {}
+      }
+      // hide banner while the new SW activates
+      cleanup();
+    }, countdown * 1000);
   }
 
   if (nowBtn) {
     nowBtn.onclick = () => {
-      // tell the waiting worker to skipWaiting
-      if (reg.waiting) {
+      // immediate apply: cancel countdown and tell the waiting worker to skipWaiting
+      canceled = true;
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      if (reg && reg.waiting) {
         reg.waiting.postMessage({ type: "SKIP_WAITING" });
       }
     };
   }
   if (laterBtn) {
-    laterBtn.onclick = () => cleanup();
+    laterBtn.onclick = () => {
+      // act as an "Undo" — cancel the pending auto-apply
+      canceled = true;
+      cleanup();
+      try {
+        showToast && showToast("Update postponed");
+      } catch (e) {}
+    };
   }
+
+  // Start the auto-apply countdown as soon as banner is shown
+  startCountdown();
 
   // Listen for controllerchange to reload the page when the new SW takes control
   navigator.serviceWorker.addEventListener(
