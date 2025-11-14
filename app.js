@@ -2321,13 +2321,14 @@ try {
   ) {
     window.addEventListener("load", () => {
       // try to derive a cache version from package.json to version caches automatically
+      let swVersion = null;
       fetch("/package.json")
         .then((r) => r.json())
         .then((pkg) => {
-          const ver =
+          swVersion =
             pkg && pkg.version ? String(pkg.version) : String(Date.now());
           return navigator.serviceWorker.register(
-            "/sw.js?cacheVersion=" + encodeURIComponent(ver)
+            "/sw.js?cacheVersion=" + encodeURIComponent(swVersion)
           );
         })
         .catch(() => {
@@ -2339,8 +2340,8 @@ try {
           try {
             showToast && showToast("Offline support enabled");
           } catch (e) {}
-          // detect updates and notify the UI
-          if (reg) attachSWUpdateHandler(reg);
+          // detect updates and notify the UI (pass the resolved version if available)
+          if (reg) attachSWUpdateHandler(reg, swVersion);
         })
         .catch((err) => {
           console.warn("Service worker registration failed:", err);
@@ -2350,12 +2351,12 @@ try {
 } catch (e) {}
 
 // Attach update handler to a ServiceWorkerRegistration to notify the page when a new worker is waiting
-function attachSWUpdateHandler(reg) {
+function attachSWUpdateHandler(reg, incomingVersion) {
   try {
     if (!reg) return;
     // If there's already a waiting worker, show the banner
     if (reg.waiting) {
-      showSWUpdateBanner(reg);
+      showSWUpdateBanner(reg, incomingVersion);
       return;
     }
     // Listen for updates found
@@ -2365,16 +2366,22 @@ function attachSWUpdateHandler(reg) {
       newWorker.addEventListener("statechange", () => {
         if (newWorker.state === "installed") {
           // A new worker is installed and waiting
-          if (reg.waiting) showSWUpdateBanner(reg);
+          if (reg.waiting) showSWUpdateBanner(reg, incomingVersion);
         }
       });
     });
   } catch (e) {}
 }
 
-function showSWUpdateBanner(reg) {
+function showSWUpdateBanner(reg, incomingVersion) {
   const banner = document.getElementById("sw-update-banner");
   if (!banner) return;
+  const msg = document.getElementById("sw-update-msg");
+  if (msg) {
+    if (incomingVersion)
+      msg.textContent = "New version " + incomingVersion + " available.";
+    else msg.textContent = "A new version is available.";
+  }
   banner.style.display = "";
   banner.classList.add("show");
   const nowBtn = document.getElementById("sw-update-now");
