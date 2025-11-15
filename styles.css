@@ -833,3 +833,24 @@ footer.site-footer {
 .sw-update.show {
   display: block;
 }
+
+/* Countdown badge inside the SW update banner */
+#sw-update-countdown {
+  display: inline-block;
+  min-width: 62px;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08) inset;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sw-update-countdown {
+    transition: none !important;
+  }
+}
