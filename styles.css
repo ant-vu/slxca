@@ -849,12 +849,34 @@ footer.site-footer {
   font-weight: 700;
   line-height: 1;
   /* outer glow using accent color + subtle inner inset for depth */
-  box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.18), 0 1px 0 rgba(0, 0, 0, 0.08) inset;
+  box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.18),
+    0 1px 0 rgba(0, 0, 0, 0.08) inset;
   border: 1px solid rgba(0, 0, 0, 0.06);
+  will-change: transform, opacity;
+  /* subtle breathing/pulse to draw attention without being distracting */
+  animation: sw-pulse 2.6s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   #sw-update-countdown {
     transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Pulse keyframes (very subtle) */
+@keyframes sw-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 0.98;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
