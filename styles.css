@@ -3,6 +3,8 @@
   --panel: #0b1220;
   --muted: #9aa6bf;
   --accent: #37b6a7;
+  /* RGB components for subtle shadow/glow uses */
+  --accent-rgb: 55, 182, 167;
   --glass: rgba(255, 255, 255, 0.03);
 }
 /* Light theme overrides when [data-theme="light"] is set on <html> */
@@ -839,14 +841,16 @@ footer.site-footer {
   display: inline-block;
   min-width: 62px;
   text-align: center;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--muted);
+  background: var(--accent);
+  color: var(--panel);
   font-size: 13px;
   font-weight: 700;
   line-height: 1;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08) inset;
+  /* outer glow using accent color + subtle inner inset for depth */
+  box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.18), 0 1px 0 rgba(0, 0, 0, 0.08) inset;
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 @media (prefers-reduced-motion: reduce) {
