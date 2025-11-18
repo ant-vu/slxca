@@ -23,6 +23,7 @@ Features in this prototype
 - Theme toggle — a persistent animated light/dark toggle is available in the header (stored in localStorage).
 - `app.js` — Client-side logic, storage (uses `localStorage`), and demo seed.
 - `README.md` — This file.
+- `NOTES.md` — Additional project notes and quickstart.
 
 ## How to run (quick)
 
