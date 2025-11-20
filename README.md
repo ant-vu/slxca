@@ -76,3 +76,16 @@ If you'd like, I can:
 - Add richer project metadata and filters (stage, funding, required roles).
 
 Pick a next step and I'll update the plan and implement it.
+
+## Community & contributing
+
+We welcome contributions! Please follow these guidelines to help us collaborate effectively:
+
+- Read `CONTRIBUTING.md` for the contribution guidelines.
+- Follow the `CODE_OF_CONDUCT.md` in all interactions.
+- If you find a security vulnerability, see `SECURITY.md`.
+- When opening issues, choose the relevant template (bug report or feature request) under `.github/ISSUE_TEMPLATE`.
+- Use the `.github/PULL_REQUEST_TEMPLATE.md` when sending pull requests.
+- See `CHANGELOG.md` for release notes and notable changes.
+
+If you'd like me to scaffold more files or integrate a CI workflow for tests, let me know which CI (GitHub Actions, Travis, etc.) you'd prefer.
